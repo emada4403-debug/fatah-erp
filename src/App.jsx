@@ -20,6 +20,7 @@ export default function App() {
   const [deals, setDeals] = useState([]);
   const [settings, setSettings] = useState({});
   const [priceHistory, setPriceHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Admin Protection State
   const [isAdmin, setIsAdmin] = useState(true);
@@ -30,8 +31,16 @@ export default function App() {
 
   // Initialize DB and state on first load
   useEffect(() => {
-    DB.seed();
-    syncData();
+    const initialize = async () => {
+      if (DB.isSupabaseConfigured()) {
+        await DB.syncFromCloud();
+      }
+      DB.seed();
+      syncData();
+      setIsLoading(false);
+    };
+
+    initialize();
 
     // Check hash for direct navigation
     const hash = window.location.hash.replace('#', '') || 'dashboard';
@@ -223,6 +232,15 @@ export default function App() {
         return <div className="text-center py-10">الصفحة المطلوبة غير موجودة</div>;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-white flex flex-col items-center justify-center gap-4">
+        <div className="w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-sm font-semibold text-slate-300">جاري تحميل البيانات ومزامنتها...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative">

@@ -1,13 +1,19 @@
 /**
- * db.js — localStorage CRUD Engine for React
- * يوفر واجهة موحدة لكل العمليات على البيانات
+ * db.js — Local-First + Supabase Sync Engine for React
+ * يوفر واجهة موحدة لكل العمليات على البيانات مع المزامنة السحابية
  */
+
+import { supabase, isSupabaseConfigured } from './supabaseClient.js';
 
 export const DB = {
   _prefix: 'fatah_erp_',
 
   _key(table) {
     return this._prefix + table;
+  },
+
+  isSupabaseConfigured() {
+    return isSupabaseConfigured;
   },
 
   getAll(table) {
@@ -24,8 +30,20 @@ export const DB = {
     return this.getAll(table).find(r => r.id === id) || null;
   },
 
-  save(table, records) {
+  // Overwrite the entire table (useful for backup import)
+  async save(table, records) {
     localStorage.setItem(this._key(table), JSON.stringify(records));
+    if (isSupabaseConfigured) {
+      try {
+        // Delete all rows in Supabase table
+        await supabase.from(table).delete().neq('id', 'placeholder_delete_all');
+        if (records && records.length > 0) {
+          await supabase.from(table).insert(records);
+        }
+      } catch (e) {
+        console.error(`DB.save Cloud Sync Error (${table}):`, e);
+      }
+    }
   },
 
   insert(table, record) {
@@ -33,11 +51,18 @@ export const DB = {
     const newRecord = {
       ...record,
       id: record.id || this._genId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: record.createdAt || new Date().toISOString(),
+      updatedAt: record.updatedAt || new Date().toISOString(),
     };
     records.push(newRecord);
-    this.save(table, records);
+    localStorage.setItem(this._key(table), JSON.stringify(records));
+
+    // Cloud push
+    if (isSupabaseConfigured) {
+      supabase.from(table).insert(newRecord)
+        .catch(e => console.error(`DB.insert Cloud Sync Error (${table}):`, e));
+    }
+
     return newRecord;
   },
 
@@ -45,14 +70,34 @@ export const DB = {
     const records = this.getAll(table);
     const idx = records.findIndex(r => r.id === id);
     if (idx === -1) return null;
-    records[idx] = { ...records[idx], ...data, updatedAt: new Date().toISOString() };
-    this.save(table, records);
-    return records[idx];
+    
+    const updatedRecord = { 
+      ...records[idx], 
+      ...data, 
+      updatedAt: new Date().toISOString() 
+    };
+    records[idx] = updatedRecord;
+    localStorage.setItem(this._key(table), JSON.stringify(records));
+
+    // Cloud push
+    if (isSupabaseConfigured) {
+      supabase.from(table).update(data).eq('id', id)
+        .catch(e => console.error(`DB.update Cloud Sync Error (${table}):`, e));
+    }
+
+    return updatedRecord;
   },
 
   delete(table, id) {
     const records = this.getAll(table).filter(r => r.id !== id);
-    this.save(table, records);
+    localStorage.setItem(this._key(table), JSON.stringify(records));
+
+    // Cloud push
+    if (isSupabaseConfigured) {
+      supabase.from(table).delete().eq('id', id)
+        .catch(e => console.error(`DB.delete Cloud Sync Error (${table}):`, e));
+    }
+
     return true;
   },
 
@@ -67,6 +112,28 @@ export const DB = {
 
   _genId() {
     return Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+  },
+
+  // Pull latest data from Supabase to LocalStorage
+  async syncFromCloud() {
+    if (!isSupabaseConfigured) return false;
+    try {
+      const tables = ['categories', 'raw_materials', 'products', 'clients', 'settings', 'price_history', 'deals', 'quotes'];
+      for (const table of tables) {
+        const { data, error } = await supabase.from(table).select('*');
+        if (error) {
+          console.error(`DB.syncFromCloud Error fetching ${table}:`, error);
+          continue;
+        }
+        if (data) {
+          localStorage.setItem(this._key(table), JSON.stringify(data));
+        }
+      }
+      return true;
+    } catch (e) {
+      console.error('DB.syncFromCloud Exception:', e);
+      return false;
+    }
   },
 
   // ===== SEED DATA =====
