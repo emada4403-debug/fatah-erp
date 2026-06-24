@@ -4,7 +4,9 @@ import { DB } from '../db/db.js';
 
 export default function Settings({ settings, onUpdate }) {
   const [name, setName] = useState(settings.name || '');
+  const [nameEn, setNameEn] = useState(settings.nameEn || '');
   const [address, setAddress] = useState(settings.address || '');
+  const [addressEn, setAddressEn] = useState(settings.addressEn || '');
   const [phone, setPhone] = useState(settings.phone || '');
   const [email, setEmail] = useState(settings.email || '');
   const [taxNo, setTaxNo] = useState(settings.taxNo || '');
@@ -20,7 +22,9 @@ export default function Settings({ settings, onUpdate }) {
   const handleSave = () => {
     const data = {
       name: name.trim(),
+      nameEn: nameEn.trim(),
       address: address.trim(),
+      addressEn: addressEn.trim(),
       phone: phone.trim(),
       email: email.trim(),
       taxNo: taxNo.trim(),
@@ -116,14 +120,18 @@ export default function Settings({ settings, onUpdate }) {
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">اسم المنشأة / المصنع</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-slate-500 mb-1">اسم المنشأة / المصنع (عربي)</label>
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50/30"
                   placeholder="اسم مصنعك"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Factory Name (English) — يظهر في عروض الأسعار</label>
+                <input type="text" value={nameEn} onChange={(e) => setNameEn(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50/30 text-left font-mono"
+                  placeholder="Al-Fath Engineering Industries"
                 />
               </div>
               <div>
@@ -137,13 +145,17 @@ export default function Settings({ settings, onUpdate }) {
                 />
               </div>
               <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-500 mb-1">العنوان والمقر</label>
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
+                <label className="block text-xs font-semibold text-slate-500 mb-1">العنوان والمقر (عربي)</label>
+                <input type="text" value={address} onChange={(e) => setAddress(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50/30"
                   placeholder="المنطقة الصناعية - مدينة العاشر من رمضان"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Address (English) — يظهر في عروض الأسعار</label>
+                <input type="text" value={addressEn} onChange={(e) => setAddressEn(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50/30 text-left font-mono"
+                  placeholder="Industrial Zone, 10th of Ramadan City, Egypt"
                 />
               </div>
               <div>

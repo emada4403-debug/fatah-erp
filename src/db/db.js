@@ -311,7 +311,9 @@ export const DB = {
     this.insert('settings', {
       id: 'company',
       name: 'مصنع الفتح للصناعات الهندسية',
+      nameEn: 'Al-Fath Engineering Industries',
       address: 'المنطقة الصناعية - العاشر من رمضان',
+      addressEn: 'Industrial Zone, 10th of Ramadan City, Egypt',
       phone: '0501234567',
       email: 'info@fatah-factory.com',
       taxNo: '123456789',
