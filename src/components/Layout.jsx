@@ -149,13 +149,12 @@ export default function Layout({
             >
               <X className="w-5 h-5" />
             </button>
-            <div className="bg-white rounded-2xl p-3 flex flex-col items-center justify-center shadow-md w-24 h-24 mb-3 border border-slate-100">
-              <svg viewBox="0 0 100 65" className="w-16 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10,32 C30,12 70,12 90,32 C70,22 30,22 10,32 Z" fill="#02273b" />
-                <path d="M15,42 C35,25 65,25 85,42 C65,32 35,32 15,42 Z" fill="#006780" />
-                <path d="M25,52 C40,39 60,39 75,52 C60,45 40,45 25,52 Z" fill="#86d1ed" />
-              </svg>
-              <span className="font-extrabold text-[10px] tracking-wider text-[#02273b] mt-1.5 font-sans">AL-FATH</span>
+            <div className="bg-white rounded-2xl p-2 flex flex-col items-center justify-center shadow-md w-24 h-24 mb-3 border border-slate-100">
+              <img 
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuArXN-t3d9q_3fbo0qB3itz0xhAYPBY-VMmZYQnQpKv9ctfxF4MBhdI9HJbPGDA56gxSMfFI_xhfWistOwx7E1G3I7gaacsaR-5pCTyxxg_WoEoxH7mJZj3KJt57qP-sKqPlP4gMBXW9YLugctm4i9A1c4G1cfXY1U9Wy3hE6AwhIDIHO8nft8srj9AlcxH3Uqx0QfciBCEQ61DMDiiXeRpv1-HD6NiMoj79IJZZCpw5bLSM9I-6wK6G10rs0M_-V8n61ykqCloVMF3" 
+                alt="Al-Fath Logo" 
+                className="w-16 h-16 object-contain"
+              />
             </div>
             <h1 className="font-black text-white text-base tracking-wide">الفتح ERP</h1>
             <p className="text-[10px] font-bold text-slate-400 mt-0.5">الإدارة الصناعية</p>

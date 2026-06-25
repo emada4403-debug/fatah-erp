@@ -1,5 +1,48 @@
 @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #02273b;
+  --color-secondary: #006780;
+  --color-secondary-container: #97e2fe;
+  --color-on-secondary-container: #00667e;
+  --color-secondary-fixed: #b8eaff;
+  --color-secondary-fixed-dim: #86d1ed;
+  
+  --color-tertiary: #002931;
+  --color-tertiary-container: #00404c;
+  
+  --color-surface-container-high: #e5e9eb;
+  --color-surface-container-low: #f1f4f6;
+  --color-surface-container-lowest: #ffffff;
+  
+  --color-on-surface: #181c1e;
+  --color-on-surface-variant: #42474c;
+  
+  --color-outline: #73787d;
+  --color-outline-variant: #c2c7cd;
+  
+  --color-surface: #f7fafc;
+  --color-surface-bright: #f7fafc;
+  
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  
+  --font-headline-xl: 'IBM Plex Sans', sans-serif;
+  --font-headline-lg: 'IBM Plex Sans', sans-serif;
+  --font-headline-md: 'IBM Plex Sans', sans-serif;
+  --font-body-md: 'IBM Plex Sans', sans-serif;
+  --font-body-lg: 'IBM Plex Sans', sans-serif;
+  --font-label-sm: 'IBM Plex Sans', sans-serif;
+
+  --font-size-headline-xl: 48px;
+  --font-size-headline-lg: 32px;
+  --font-size-headline-md: 24px;
+  --font-size-body-lg: 18px;
+  --font-size-body-md: 16px;
+  --font-size-label-sm: 12px;
+}
 
 :root {
   font-family: 'Cairo', system-ui, -apple-system, sans-serif;

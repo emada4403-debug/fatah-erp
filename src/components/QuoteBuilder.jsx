@@ -316,8 +316,25 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
   // Helper to extract unique subsections
   const uniqueSubsections = Array.from(new Set(formItems.map(it => it.subsection || 'صاج مجلفن')));
 
+  const resolveImage = (img) => {
+    if (!img) return '';
+    if (img.startsWith('http://') || img.startsWith('https://')) return img;
+    return window.location.origin + img;
+  };
+
+  const getValidityDays = () => {
+    if (!formValidUntil || !formDate) return 15;
+    const diffTime = new Date(formValidUntil) - new Date(formDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 15;
+  };
+
   const bannerTitle = formProductType === 'black' ? 'Black Sheet Metal Ducts' : formProductType === 'general' ? 'General Fabrication' : 'Galvanized Sheet Metal Ducts';
-  const bannerImage = formProductType === 'black' ? '/images/black_duct.png' : formProductType === 'general' ? '/images/raw_fe.png' : '/images/galvanized_duct.png';
+  const bannerImage = formProductType === 'black' 
+    ? '/images/black_duct.png' 
+    : formProductType === 'general' 
+      ? '/images/raw_fe.png' 
+      : 'https://lh3.googleusercontent.com/aida/AP1WRLt7XEZusx28evOEwYaWsG6FqUqNfCqROQxfSbwBcdSwEFArj3ZRq9_W8a0CQvlk_kpnTUv6tkzizqqGlSUJ0lbmI4Z47AS8HwJZq_l9tew6me4X9PtfjIHg5T5Cp2_vqycAXdQjXZRa1kqjzlM14hCM8CpurBZxYE6cKQk668JC8VMd5eqjRcTc4RIGu1RMGaWPAILlvUbV_wo-D78okXWPxmHnMYW_Je7gSMpRebvZqBUoJiZx1F3iLys';
 
   // Trigger Print of the A4 layout
   const handlePrint = () => {
@@ -332,49 +349,66 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
     const sectionsHTML = uniqueSubsections.map((sec, subSecIdx) => {
       const secItems = itemsBySection[sec] || [];
       return `
-        <tr class="bg-slate-100/80 font-bold border-b border-slate-200">
-          <td colspan="6" class="py-2.5 px-4 text-xs text-[#02273b] text-left uppercase tracking-wider font-extrabold">${sec}</td>
+        <tr class="bg-surface border-b border-surface-container-high font-bold">
+          <td colspan="6" class="py-2.5 px-4 text-xs text-primary uppercase tracking-wider font-extrabold">${sec}</td>
         </tr>
-        ${secItems.map((it, i) => `
-          <tr class="border-b border-slate-200">
-            <td class="py-5 px-4 text-slate-400 text-xs align-top">${subSecIdx + 1}.${i + 1}</td>
-            <td class="py-5 px-4 align-top">
-              <p class="font-bold text-slate-900 mb-1 uppercase text-sm">${it.itemTitle || it.productName}</p>
-              ${it.itemDesc ? `<p class="text-xs text-slate-500 mb-3 leading-relaxed">${it.itemDesc}</p>` : ''}
-              ${it.techNotes ? `
-                <div class="bg-slate-50 border border-slate-200 rounded-lg p-3.5 mt-2">
-                  <p class="text-[9px] font-bold uppercase tracking-wider text-[#02273b] mb-1.5">Technical Note:</p>
-                  <p class="text-xs text-slate-500 whitespace-pre-wrap leading-relaxed">${it.techNotes.replace('275 g/m²', '<strong class="text-red-650 font-bold">275 g/m²</strong>')}</p>
-                </div>
-              ` : ''}
-            </td>
-            <td class="py-5 px-4 text-right text-slate-600 text-xs align-top">${it.unitType || '—'}</td>
-            <td class="py-5 px-4 text-right font-semibold text-slate-800 text-xs align-top">${(it.qty || 0).toLocaleString('en')}</td>
-            <td class="py-5 px-4 text-right text-slate-600 text-xs align-top">${fmtEN(it.unitPrice)}</td>
-            <td class="py-5 px-4 text-right font-bold text-slate-900 align-top">${fmtEN(it.total)}</td>
-          </tr>
-        `).join('')}
+        ${secItems.map((it, i) => {
+          const techNotesList = it.techNotes
+            ? it.techNotes.split('\n').map(line => line.trim()).filter(line => line)
+            : [];
+          const techNotesHTML = techNotesList.length
+            ? `
+              <div class="bg-surface p-4 rounded border border-surface-container-high mt-4">
+                <p class="font-label-sm text-primary uppercase mb-2">Technical Note:</p>
+                <ul class="font-body-md text-on-surface-variant text-sm space-y-1 list-none">
+                  ${techNotesList.map(line => {
+                    let formattedLine = line;
+                    if (formattedLine.includes('275 g/m²')) {
+                      formattedLine = formattedLine.replace('275 g/m²', '<strong class="text-error font-medium">275 g/m²</strong>');
+                    }
+                    return `<li class="">${formattedLine}</li>`;
+                  }).join('')}
+                </ul>
+              </div>
+            `
+            : '';
+
+          return `
+            <tr class="border-b border-surface-container-high">
+              <td class="py-6 px-4 font-body-md text-on-surface font-medium">${subSecIdx + 1}.${i + 1}</td>
+              <td class="py-6 px-4">
+                <p class="font-body-md text-on-surface font-bold mb-2 uppercase">${it.itemTitle || it.productName}</p>
+                ${it.itemDesc ? `<p class="font-body-md text-on-surface-variant text-sm mb-4 leading-relaxed">${it.itemDesc}</p>` : ''}
+                ${techNotesHTML}
+              </td>
+              <td class="py-6 px-4 font-body-md text-on-surface text-right">${it.unitType || 'Ton'}</td>
+              <td class="py-6 px-4 font-body-md text-on-surface text-right">${(it.qty || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+              <td class="py-6 px-4 font-body-md text-on-surface text-right">${fmtEN(it.unitPrice)}</td>
+              <td class="py-6 px-4 font-body-md text-on-surface font-bold text-right">${fmtEN(it.total)}</td>
+            </tr>
+          `;
+        }).join('')}
       `;
     }).join('');
 
     const accHTML = formAccessories.length ? `
-      <div style="margin-bottom: 48px;">
-        <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
-          <div style="height:1px;background:#e5e9eb;flex:1;"></div>
-          <h4 style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#73787d;white-space:nowrap;">II. Specialized Component Index</h4>
-          <div style="height:1px;background:#e5e9eb;flex:1;"></div>
+      <div class="mb-12 page-break">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="h-px bg-surface-container-high flex-1"></div>
+          <h4 class="font-label-sm text-on-surface-variant tracking-widest uppercase">II. Specialized Component Index</h4>
+          <div class="h-px bg-surface-container-high flex-1"></div>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(4, 1fr);gap:16px;">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
           ${formAccessories.map(a => `
-            <div style="background:#f7fafc;border:1px solid #e5e9eb;border-radius:8px;padding:14px;display:flex;flex-direction:column;">
-              <div style="height:80px;background:#fff;border:1px solid #ebeef0;border-radius:6px;margin-bottom:10px;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:8px;">
-                ${a.image ? `<img src="${a.image}" style="max-height:100%;max-width:100%;object-fit:contain;mix-blend-mode:multiply;"/>` : `<span style="font-size:24px;">📦</span>`}
+            <div class="bg-surface rounded border border-surface-container-high p-4 flex flex-col hover:border-secondary transition-colors">
+              <div class="h-24 bg-surface-container-lowest rounded mb-3 flex items-center justify-center p-2 border border-surface-container">
+                ${a.image ? `<img class="h-full object-contain mix-blend-multiply" src="${resolveImage(a.image)}" />` : `<span style="font-size: 24px;">📦</span>`}
               </div>
-              <p style="font-size:11px;font-weight:700;color:#181c1e;margin-bottom:4px;text-transform:uppercase;">${a.name}</p>
-              ${a.description ? `<p style="font-size:10px;color:#73787d;margin-bottom:8px;flex:1;line-height:1.5;">${a.description}</p>` : '<div style="flex:1;"></div>'}
-              <div style="border-top:1px solid #ebeef0;padding-top:8px;margin-top:4px;display:flex;justify-content:space-between;align-items:center;">
-                <span style="font-size:8px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#73787d;">UNIT PRICE</span>
-                <span style="font-size:12px;font-weight:700;color:#02273b;">$${fmtEN(a.unitPrice)}</span>
+              <h5 class="font-label-sm text-on-surface font-bold mb-1">${a.name}</h5>
+              ${a.description ? `<p class="font-body-md text-on-surface-variant text-xs mb-3 flex-1">${a.description}</p>` : '<div class="flex-1"></div>'}
+              <div class="flex justify-between items-end mt-auto pt-3 border-t border-surface-container-high">
+                <span class="font-label-sm text-outline text-[10px]">UNIT PRICE</span>
+                <span class="font-body-md text-primary font-bold">$${fmtEN(a.unitPrice)}</span>
               </div>
             </div>
           `).join('')}
@@ -385,19 +419,21 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
     const secNumSupp = formAccessories.length ? 'III' : 'II';
     const wkHTML = formWorkmanship.filter(r => r.desc).length ? `
       <div>
-        <h5 style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#02273b;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="width:16px;height:1px;background:#02273b;"></span>Assembly Workmanship</h5>
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <h5 class="font-label-sm text-primary uppercase mb-3 flex items-center gap-2">
+          <span class="w-4 h-px bg-primary"></span> Assembly Workmanship
+        </h5>
+        <table class="w-full text-left text-sm border-collapse">
           <thead>
-            <tr style="background:#f7fafc;border-top:1px solid #e5e9eb;border-bottom:1px solid #e5e9eb;">
-              <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:600;color:#73787d;">Description</th>
-              <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:600;color:#73787d;">Price (L.E)</th>
+            <tr class="bg-surface border-y border-surface-container-high">
+              <th class="py-2 px-3 font-label-sm text-on-surface-variant font-medium">Description</th>
+              <th class="py-2 px-3 font-label-sm text-on-surface-variant font-medium text-right">Price (L.E)</th>
             </tr>
           </thead>
           <tbody>
             ${formWorkmanship.filter(r => r.desc).map((r, i) => `
-              <tr style="border-bottom:1px solid #ebeef0;background:${i % 2 === 1 ? '#f7fafc' : '#fff'};">
-                <td style="padding:10px;color:#181c1e;">${r.desc}</td>
-                <td style="padding:10px;text-align:right;font-weight:600;color:#02273b;">${r.price}</td>
+              <tr class="border-b border-surface-container ${i % 2 === 1 ? 'bg-surface-bright' : ''}">
+                <td class="py-3 px-3 text-on-surface">${r.desc}</td>
+                <td class="py-3 px-3 text-on-surface text-right font-medium">${r.price}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -407,19 +443,21 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
 
     const trHTML = formTransformation.filter(r => r.desc).length ? `
       <div>
-        <h5 style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#02273b;margin-bottom:12px;display:flex;align-items:center;gap:8px;"><span style="width:16px;height:1px;background:#02273b;"></span>Transformation Surcharges</h5>
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <h5 class="font-label-sm text-primary uppercase mb-3 flex items-center gap-2">
+          <span class="w-4 h-px bg-primary"></span> Transformation Surcharges
+        </h5>
+        <table class="w-full text-left text-sm border-collapse">
           <thead>
-            <tr style="background:#f7fafc;border-top:1px solid #e5e9eb;border-bottom:1px solid #e5e9eb;">
-              <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:600;color:#73787d;">Description</th>
-              <th style="padding:8px 10px;text-align:right;font-size:10px;font-weight:600;color:#73787d;">Price (L.E)</th>
+            <tr class="bg-surface border-y border-surface-container-high">
+              <th class="py-2 px-3 font-label-sm text-on-surface-variant font-medium">Description</th>
+              <th class="py-2 px-3 font-label-sm text-on-surface-variant font-medium text-right">Price (L.E)</th>
             </tr>
           </thead>
           <tbody>
             ${formTransformation.filter(r => r.desc).map((r, i) => `
-              <tr style="border-bottom:1px solid #ebeef0;background:${i % 2 === 1 ? '#f7fafc' : '#fff'};">
-                <td style="padding:10px;color:#181c1e;">${r.desc}</td>
-                <td style="padding:10px;text-align:right;font-weight:600;color:#02273b;">${r.price}</td>
+              <tr class="border-b border-surface-container ${i % 2 === 1 ? 'bg-surface-bright' : ''}">
+                <td class="py-3 px-3 text-on-surface">${r.desc}</td>
+                <td class="py-3 px-3 text-on-surface text-right font-medium">${r.price}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -427,195 +465,280 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
       </div>
     ` : '';
 
-    const firstProductImage = products.find(p => p.id === formItems[0]?.productId)?.image || '';
+    const suppHTML = (formWorkmanship.filter(r => r.desc).length || formTransformation.filter(r => r.desc).length) ? `
+      <div class="mb-12">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="h-px bg-surface-container-high flex-1"></div>
+          <h4 class="font-label-sm text-on-surface-variant tracking-widest uppercase">${secNumSupp}. Technical Supplements & Surcharges</h4>
+          <div class="h-px bg-surface-container-high flex-1"></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+          ${wkHTML}
+          ${trHTML}
+        </div>
+      </div>
+    ` : '';
+
+    const validityDays = getValidityDays();
+    const termsHTML = `
+      <div class="mb-12 bg-surface p-6 rounded border border-surface-container-high text-left">
+        <h4 class="font-label-sm text-primary tracking-widest uppercase mb-6">IV. Commercial Terms</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <p class="font-label-sm text-outline uppercase mb-2">Payment Structure</p>
+            <p class="font-body-md text-on-surface text-sm">${formPaymentTerms || '—'}</p>
+          </div>
+          <div>
+            <p class="font-label-sm text-outline uppercase mb-2">Delivery Timeline</p>
+            <p class="font-body-md text-on-surface text-sm">Estimated <strong class="font-semibold text-primary">${formDeliveryDays} Business Days</strong> from receipt of advance payment and approved technical drawings.</p>
+          </div>
+          <div>
+            <p class="font-label-sm text-outline uppercase mb-2">Quote Validity</p>
+            <p class="font-body-md text-on-surface text-sm">This quotation remains valid for <strong class="font-semibold text-primary">${validityDays} Calendar Days</strong> from the issue date due to material market volatility.</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const totalsHTML = `
+      <div class="mt-16 pt-8 border-t border-surface-container-high flex flex-col md:flex-row justify-between items-end relative text-left">
+        <!-- Stamp APPROVED -->
+        <div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rotate-[-12deg] opacity-70 pointer-events-none no-print">
+          <div class="border-4 border-primary text-primary font-headline-md font-bold py-3 px-6 rounded-lg uppercase tracking-widest bg-white/60 backdrop-blur-sm shadow-sm flex flex-col items-center gap-2">
+            <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDt2m7o8bhO8VPuO85SZ_iNx3ZA9MkqZnMHW5S8v3G2Ql-qCWwLWgOY0SG_PEnnaWFbLuxKQnCQd14naVxKA83HKXIJq5K5Z10i4Nb_21p0ZU2yomdsP3PmOwKEMqz8JBVUppxnGuuzvBkhCD8ujhJY-1BqwaQL_Gy9y-njZFSqkvGiJuieAMlM-ctygU6JHcDyF8h4ByqD0QpZKryqsqKhV3Fi6sfLmRYJGip-dDRYrEQ2K71BJNkqs5CgQWkOKyWMjuCulNpiQ7L5" alt="Al-Fath Logo" class="w-16 h-auto mix-blend-multiply opacity-90">
+            <div class="text-center leading-tight">
+              AL-FATH ENGINEERING<br>
+              <span class="text-lg">APPROVED</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="w-full md:w-2/3 grid grid-cols-3 gap-4 mb-8 md:mb-0">
+          <div class="text-center">
+            <div class="h-16 border-b border-outline-variant mb-2"></div>
+            <p class="font-label-sm text-on-surface-variant text-[10px] uppercase tracking-wider">Sales Management</p>
+          </div>
+          <div class="text-center">
+            <div class="h-16 border-b border-outline-variant mb-2"></div>
+            <p class="font-label-sm text-on-surface-variant text-[10px] uppercase tracking-wider">Contract Control</p>
+          </div>
+          <div class="text-center">
+            <div class="h-16 border-b border-outline-variant mb-2"></div>
+            <p class="font-label-sm text-on-surface-variant text-[10px] uppercase tracking-wider">General Manager</p>
+          </div>
+        </div>
+
+        <div class="bg-surface-bright p-6 rounded border border-surface-container-high w-full md:w-auto min-w-[280px]">
+          <div class="flex justify-between items-end mb-4">
+            <span class="font-label-sm text-on-surface-variant uppercase tracking-widest">Grand Total <br><span class="text-[10px]">(L.E)</span></span>
+            <span class="font-headline-lg text-primary font-bold">${fmtEN(liveTotals.total)}</span>
+          </div>
+          <div class="border-t border-surface-container-high pt-3 flex justify-between items-center">
+            <span class="font-label-sm text-outline text-[10px] uppercase">VAT Inclusive (${formTaxPct}%)</span>
+            <span class="bg-secondary-container text-on-secondary-container font-label-sm px-2 py-1 rounded text-[10px] uppercase">Final Review</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const footerHTML = `
+      <div class="mt-12 flex justify-between items-center border-t border-surface-container pt-4 text-left">
+        <div class="flex gap-2">
+          <span class="bg-surface-variant text-on-surface-variant font-label-sm px-2 py-1 rounded text-[10px] uppercase">Confidential</span>
+          <span class="bg-surface-variant text-on-surface-variant font-label-sm px-2 py-1 rounded text-[10px] uppercase">Draft Ver. 4.2</span>
+        </div>
+        <p class="font-body-md text-outline text-xs text-right">
+          © ${new Date().getFullYear()} Industrial Precision Fabrication. All Rights Reserved.
+        </p>
+      </div>
+    `;
 
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
   <title>Quotation ${formNumber}</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'IBM Plex Sans', sans-serif;
-      background-color: #fff;
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "inverse-primary": "#abcae4",
+            "secondary-fixed": "#b8eaff",
+            "on-tertiary-fixed": "#001f26",
+            "surface-container-highest": "#e0e3e5",
+            "secondary": "#006780",
+            "surface-bright": "#f7fafc",
+            "error-container": "#ffdad6",
+            "surface-container-high": "#e5e9eb",
+            "primary": "#02273b",
+            "inverse-surface": "#2d3133",
+            "surface-container-low": "#f1f4f6",
+            "primary-fixed-dim": "#abcae4",
+            "inverse-on-surface": "#eef1f3",
+            "on-tertiary-container": "#66aec1",
+            "surface-dim": "#d7dadc",
+            "surface-container-lowest": "#ffffff",
+            "on-surface-variant": "#42474c",
+            "tertiary-fixed-dim": "#89d1e5",
+            "on-secondary-fixed-variant": "#004d61",
+            "surface-variant": "#e0e3e5",
+            "error": "#ba1a1a",
+            "tertiary-container": "#00404c",
+            "surface-tint": "#436278",
+            "on-primary-fixed": "#001e2f",
+            "on-surface": "#181c1e",
+            "on-tertiary": "#ffffff",
+            "on-primary-fixed-variant": "#2b4a5f",
+            "on-secondary-container": "#00667e",
+            "on-secondary-fixed": "#001f28",
+            "surface": "#f7fafc",
+            "outline": "#73787d",
+            "on-primary": "#ffffff",
+            "background": "#f7fafc",
+            "primary-fixed": "#c9e6ff",
+            "on-secondary": "#ffffff",
+            "secondary-container": "#97e2fe",
+            "on-tertiary-fixed-variant": "#004e5c",
+            "primary-container": "#1d3d52",
+            "on-background": "#181c1e",
+            "secondary-fixed-dim": "#86d1ed",
+            "on-error": "#ffffff",
+            "outline-variant": "#c2c7cd",
+            "tertiary": "#002931",
+            "tertiary-fixed": "#acedff",
+            "on-primary-container": "#89a8c1",
+            "surface-container": "#ebeef0",
+            "on-error-container": "#93000a"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "base": "8px",
+            "section-gap": "48px",
+            "gutter": "16px",
+            "container-padding": "24px"
+          },
+          "fontFamily": {
+            "headline-lg": ["IBM Plex Sans"],
+            "body-lg": ["IBM Plex Sans"],
+            "headline-md": ["IBM Plex Sans"],
+            "label-sm": ["IBM Plex Sans"],
+            "headline-xl": ["IBM Plex Sans"],
+            "headline-lg-mobile": ["IBM Plex Sans"],
+            "body-md": ["IBM Plex Sans"]
+          },
+          "fontSize": {
+            "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+            "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "500" }],
+            "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+            "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+            "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+          }
+        }
+      }
     }
+  </script>
+  <style>
+    body { font-family: 'IBM Plex Sans', sans-serif; background-color: #ffffff; color: #181c1e; }
     @media print {
-      body {
-        background-color: #fff;
-      }
-      .page-break {
-        page-break-before: always;
-      }
+      body { background-color: #fff; }
+      .no-print { display: none !important; }
+      .print-shadow-none { box-shadow: none !important; }
+      .print-border { border: 1px solid #e0e3e5 !important; }
+      .page-break { page-break-before: always; }
     }
   </style>
 </head>
 <body class="p-8">
-  <div class="max-w-[950px] mx-auto bg-white">
-    <!-- Header -->
-    <div class="flex justify-between items-start mb-10 border-b border-slate-200 pb-6">
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center gap-3">
-          <div class="bg-white border border-slate-100 rounded-xl p-2 shadow-sm w-16 h-16 flex items-center justify-center">
-            <svg viewBox="0 0 100 65" class="w-12 h-8" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10,32 C30,12 70,12 90,32 C70,22 30,22 10,32 Z" fill="#02273b" />
-              <path d="M15,42 C35,25 65,25 85,42 C65,32 35,32 15,42 Z" fill="#006780" />
-              <path d="M25,52 C40,39 60,39 75,52 C60,45 40,45 25,52 Z" fill="#86d1ed" />
-            </svg>
-          </div>
-          <div>
-            <h1 class="text-[#02273b] text-base font-black tracking-tight leading-none">AL-FATH</h1>
-            <p class="text-[9px] text-[#006780] font-bold mt-1 uppercase tracking-wider">Engineering Industries</p>
+  <div class="max-w-[1000px] mx-auto bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant print-shadow-none print-border overflow-hidden">
+    <div class="p-8 md:p-12">
+      <!-- Document Header -->
+      <div class="flex flex-col md:flex-row justify-between items-start mb-12 border-b border-surface-container-high pb-8 gap-4">
+        <div class="flex flex-col gap-4">
+          <img alt="Al-Fath Engineering Industries" class="h-20 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuArXN-t3d9q_3fbo0qB3itz0xhAYPBY-VMmZYQnQpKv9ctfxF4MBhdI9HJbPGDA56gxSMfFI_xhfWistOwx7E1G3I7gaacsaR-5pCTyxxg_WoEoxH7mJZj3KJt57qP-sKqPlP4gMBXW9YLugctm4i9A1c4G1cfXY1U9Wy3hE6AwhIDIHO8nft8srj9AlcxH3Uqx0QfciBCEQ61DMDiiXeRpv1-HD6NiMoj79IJZZCpw5bLSM9I-6wK6G10rs0M_-V8n61ykqCloVMF3">
+          <div class="mt-4">
+            <p class="font-label-sm text-outline tracking-wider uppercase mb-1">Client</p>
+            <h2 class="font-headline-md text-on-surface font-bold">${formClientName || 'ELNADA FOR CONTRACTING'}</h2>
           </div>
         </div>
-        <div class="mt-4">
-          <p class="text-[9px] text-slate-450 font-bold uppercase tracking-widest">Client</p>
-          <h2 class="text-sm font-bold text-slate-800">${formClientName}</h2>
-          ${formClientContact ? `<p class="text-xs text-slate-500 mt-0.5">Attn: ${formClientContact}</p>` : ''}
-        </div>
-      </div>
-      <div class="text-right">
-        <h1 class="text-3xl font-black text-[#02273b] uppercase tracking-tight">Quotation</h1>
-        <p class="text-xs text-slate-400 font-semibold mt-1">Reference: ${formNumber}</p>
-        <div class="flex gap-6 mt-4 justify-end text-right">
-          <div>
-            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Date</p>
-            <p class="text-xs font-semibold text-slate-800">${fmtDateEN(formDate)}</p>
-          </div>
-          ${formProjectName ? `
+        <div class="text-right mt-6 md:mt-0 flex flex-col items-end">
+          <h1 class="font-headline-xl text-primary font-bold tracking-tight uppercase mb-2">Quotation</h1>
+          <p class="font-body-md text-on-surface-variant mb-6">Reference: ${formNumber}</p>
+          <div class="flex gap-8 text-right">
             <div>
-              <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Project</p>
-              <p class="text-xs font-semibold text-slate-800">${formProjectName}</p>
+              <p class="font-label-sm text-outline tracking-wider uppercase mb-1">Date</p>
+              <p class="font-body-md text-on-surface font-medium">${fmtDateEN(formDate)}</p>
             </div>
-          ` : ''}
-          <div>
-            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Valid Until</p>
-            <p class="text-xs font-semibold text-slate-800">${fmtDateEN(formValidUntil)}</p>
+            ${formProjectName ? `
+            <div>
+              <p class="font-label-sm text-outline tracking-wider uppercase mb-1">Project</p>
+              <p class="font-body-md text-on-surface font-medium">${formProjectName}</p>
+            </div>
+            ` : ''}
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Product Hero Image Showcase -->
-    <div class="relative w-full h-48 bg-slate-100 rounded-2xl overflow-hidden mb-10 border border-slate-200">
-      ${bannerImage ? `<img src="${bannerImage}" class="w-full h-full object-cover object-center"/>` : `<div class="w-full h-full flex items-center justify-center"><span class="text-slate-300 text-3xl font-extrabold">AL-FATH</span></div>`}
-      <div class="absolute inset-0 bg-gradient-to-r from-[#02273b]/90 via-[#02273b]/40 to-transparent flex flex-col justify-center p-8">
-        <p class="text-[10px] text-[#86d1ed] font-bold tracking-widest uppercase mb-1">Primary Fabrication</p>
-        <h3 class="text-xl text-white font-black max-w-md leading-tight">${bannerTitle}</h3>
-      </div>
-    </div>
-
-    <!-- Section I -->
-    <div class="mb-10">
-      <div class="flex items-center gap-4 mb-4">
-        <div class="h-px bg-slate-200 flex-1"></div>
-        <h4 class="text-[9px] font-bold uppercase text-slate-400 tracking-widest">I. Primary Fabrication Schedule</h4>
-        <div class="h-px bg-slate-200 flex-1"></div>
-      </div>
-      <table class="w-full border-collapse text-left">
-        <thead>
-          <tr class="bg-slate-50 border-y border-slate-200 text-[9px] font-bold text-slate-400 uppercase">
-            <th class="py-2.5 px-4 w-16">Item</th>
-            <th class="py-2.5 px-4">Description</th>
-            <th class="py-2.5 px-4 text-right w-24">Unit</th>
-            <th class="py-2.5 px-4 text-right w-32">Qty</th>
-            <th class="py-2.5 px-4 text-right w-32">Rate (L.E)</th>
-            <th class="py-2.5 px-4 text-right w-40">Total (L.E)</th>
-          </tr>
-        </thead>
-        <tbody class="align-top">
-          ${sectionsHTML}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Section II -->
-    ${accHTML}
-
-    <!-- Section III -->
-    ${(formWorkmanship.filter(r => r.desc).length || formTransformation.filter(r => r.desc).length) ? `
-      <div class="mb-10 page-break">
-        <div class="flex items-center gap-4 mb-5">
-          <div class="h-px bg-slate-200 flex-1"></div>
-          <h4 class="text-[9px] font-bold uppercase text-slate-400 tracking-widest">${secNumSupp}. Technical Supplements & Surcharges</h4>
-          <div class="h-px bg-slate-200 flex-1"></div>
-        </div>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
-          ${wkHTML}
-          ${trHTML}
-        </div>
-      </div>
-    ` : ''}
-
-    <!-- Section IV -->
-    <div class="mb-10 bg-slate-50 rounded-2xl border border-slate-200 p-6">
-      <h4 class="text-[9px] font-bold uppercase tracking-widest text-[#02273b] mb-4">IV. Commercial Terms</h4>
-      <div class="grid grid-cols-3 gap-6">
-        <div>
-          <p class="text-[9px] font-bold text-slate-450 uppercase mb-1">Payment Structure</p>
-          <p class="text-xs text-slate-700 leading-relaxed">${formPaymentTerms || '—'}</p>
-        </div>
-        <div>
-          <p class="text-[9px] font-bold text-slate-450 uppercase mb-1">Delivery Timeline</p>
-          <p class="text-xs text-slate-700 leading-relaxed"><strong class="font-semibold text-[#02273b]">${formDeliveryDays} Business Days</strong></p>
-        </div>
-        <div>
-          <p class="text-[9px] font-bold text-slate-450 uppercase mb-1">Quote Validity</p>
-          <p class="text-xs text-slate-700 leading-relaxed">Valid for <strong class="font-semibold text-[#02273b]">${fmtDateEN(formValidUntil)}</strong></p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Signatures & Total -->
-    <div class="mt-16 pt-8 border-t border-slate-200 flex justify-between items-end relative">
-      <!-- Stamp APPROVED -->
-      <div style="position:absolute; left:45%; top: -30px; transform: rotate(-12deg); opacity: 0.72;" class="bg-white border-4 border-[#02273b] text-[#02273b] font-bold py-3 px-6 rounded-lg uppercase tracking-widest flex flex-col items-center gap-1">
-        <svg viewBox="0 0 100 65" class="w-12 h-6" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M10,32 C30,12 70,12 90,32 C70,22 30,22 10,32 Z" fill="#02273b" />
-          <path d="M15,42 C35,25 65,25 85,42 C65,32 35,32 15,42 Z" fill="#006780" />
-          <path d="M25,52 C40,39 60,39 75,52 C60,45 40,45 25,52 Z" fill="#86d1ed" />
-        </svg>
-        <div class="text-[10px] text-center font-black leading-none mt-1">
-          AL-FATH ENGINEERING<br>
-          <span class="text-xs font-black">APPROVED</span>
-        </div>
-      </div>
-      
-      <div class="w-[60%] grid grid-cols-3 gap-4">
-        <div class="text-center">
-          <div class="h-12 border-b border-slate-300 mb-2"></div>
-          <p class="text-[9px] text-slate-450 font-bold uppercase tracking-wider">Sales Management</p>
-        </div>
-        <div class="text-center">
-          <div class="h-12 border-b border-slate-300 mb-2"></div>
-          <p class="text-[9px] text-slate-450 font-bold uppercase tracking-wider">Contract Control</p>
-        </div>
-        <div class="text-center">
-          <div class="h-12 border-b border-slate-300 mb-2"></div>
-          <p class="text-[9px] text-slate-450 font-bold uppercase tracking-wider">General Manager</p>
+      <!-- Hero Section (Product Showcase) -->
+      <div class="relative w-full h-64 md:h-80 bg-surface-container rounded-lg overflow-hidden mb-12 group border border-outline-variant">
+        <img alt="Product Showcase" class="w-full h-full object-cover object-center" src="${resolveImage(bannerImage)}">
+        <div class="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/60 to-transparent flex flex-col justify-center p-8 md:p-12">
+          <p class="font-label-sm text-secondary-fixed tracking-widest uppercase mb-2">Primary Fabrication</p>
+          <h3 class="font-headline-lg text-white font-bold max-w-md leading-tight">${bannerTitle}</h3>
         </div>
       </div>
 
-      <div class="bg-[#02273b] p-5 rounded-2xl text-white min-w-[260px]">
-        <div class="flex justify-between items-end mb-2">
-          <span class="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Grand Total (L.E)</span>
-          <span class="text-xl font-bold">${fmtEN(liveTotals.total)}</span>
+      <!-- I. Primary Fabrication Schedule -->
+      <div class="mb-12">
+        <div class="flex items-center gap-4 mb-6">
+          <div class="h-px bg-surface-container-high flex-1"></div>
+          <h4 class="font-label-sm text-on-surface-variant tracking-widest uppercase">I. Primary Fabrication Schedule</h4>
+          <div class="h-px bg-surface-container-high flex-1"></div>
         </div>
-        <div class="border-t border-slate-700/60 pt-2 flex justify-between items-center text-[10px]">
-          <span class="text-slate-400 font-semibold">VAT Inclusive (${formTaxPct}%)</span>
-          <span class="bg-[#86d1ed] text-[#02273b] font-black px-2 py-0.5 rounded text-[8px] uppercase">Final Review</span>
+        <div class="w-full overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-surface border-y border-surface-container-high">
+                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase w-16">Item</th>
+                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase">Description</th>
+                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-24">Unit</th>
+                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-32">Qty</th>
+                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-32">Rate (L.E)</th>
+                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-40">Total (L.E)</th>
+              </tr>
+            </thead>
+            <tbody class="align-top">
+              ${sectionsHTML}
+            </tbody>
+          </table>
         </div>
       </div>
-    </div>
 
-    <!-- Footer Notes -->
-    <div class="mt-12 flex justify-between items-center border-t border-slate-100 pt-4 text-[9px] text-slate-400 font-medium">
-      <div class="flex gap-2">
-        <span class="bg-slate-100 text-slate-400 px-2 py-0.5 rounded uppercase font-bold">Confidential</span>
-        <span class="bg-slate-100 text-slate-400 px-2 py-0.5 rounded uppercase font-bold">Approved</span>
-      </div>
-      <p>© ${new Date().getFullYear()} Al-Fath Engineering Industries. All Rights Reserved.</p>
+      <!-- II. Specialized Component Index -->
+      ${accHTML}
+
+      <!-- III. Technical Supplements & Surcharges -->
+      ${suppHTML}
+
+      <!-- IV. Commercial Terms -->
+      ${termsHTML}
+
+      <!-- Signatures & Total -->
+      ${totalsHTML}
+
+      <!-- Footer Notes -->
+      ${footerHTML}
     </div>
   </div>
 </body>
@@ -628,6 +751,7 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
       printWindow.print();
     }, 500);
   };
+
 
   return (
     <div className="space-y-6">
@@ -653,21 +777,7 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT COLUMN: INTERACTIVE BUILDER FORM (5/12 width) */}
         <div className="lg:col-span-5 space-y-6 max-h-[80vh] overflow-y-auto pr-1">
-          {/* 1. Product Family type selection */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-xs space-y-3">
-            <h3 className="text-xs font-black text-slate-700 flex items-center gap-1.5"><ChevronRight className="w-4 h-4 text-[#006780]"/>عائلة الإنتاج الرئيسية</h3>
-            <div className="grid grid-cols-3 gap-2">
-              {[{key:'galvanized',label:'Galvanized',sub:'مجلفن',icon:'💿'},{key:'black',label:'Black Sheet',sub:'أسود',icon:'⬛'},{key:'general',label:'General',sub:'عام',icon:'📦'}].map(t=>(
-                <button key={t.key} type="button" onClick={()=>handleProductTypeChange(t.key)} className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 text-center transition-all cursor-pointer ${formProductType===t.key?'border-[#006780] bg-[#006780]/5 text-[#02273b] font-bold':'border-slate-100 hover:border-slate-200'}`}>
-                  <span className="text-xl">{t.icon}</span>
-                  <div>
-                    <p className="text-[10px] font-black">{t.label}</p>
-                    <p className="text-[9px] text-slate-400">{t.sub}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+
 
           {/* 2. Client Details */}
           <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-xs space-y-4">
@@ -937,144 +1047,169 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
 
         {/* RIGHT COLUMN: PREMIUM A4 PRINT DOCUMENT PREVIEW (7/12 width) */}
         <div className="lg:col-span-7 bg-slate-100 rounded-2xl p-4 md:p-8 border border-slate-200 shadow-inner max-h-[85vh] overflow-y-auto flex justify-center">
-          <div dir="ltr" className="w-full max-w-[850px] bg-white rounded-lg shadow-xl border border-slate-250 p-8 md:p-12 relative print-shadow-none print-border flex flex-col justify-between" style={{aspectRatio:'1/1.414', fontFamily:"'IBM Plex Sans', sans-serif"}}>
-            
-            <div className="space-y-10">
+          <div dir="ltr" className="w-full max-w-[1000px] mx-auto bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant print-shadow-none print-border overflow-hidden flex flex-col justify-between" style={{fontFamily:"'IBM Plex Sans', sans-serif"}}>
+            <div className="p-8 md:p-12 text-left">
               {/* Document Header */}
-              <div className="flex flex-col md:flex-row justify-between items-start border-b border-slate-200 pb-6 gap-4">
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="bg-white border border-slate-150 rounded-xl p-2 shadow-xs w-14 h-14 flex items-center justify-center">
-                      <svg viewBox="0 0 100 65" className="w-10 h-6" fill="none" xmlns="http://www.w3.org/2050/svg">
-                        <path d="M10,32 C30,12 70,12 90,32 C70,22 30,22 10,32 Z" fill="#02273b" />
-                        <path d="M15,42 C35,25 65,25 85,42 C65,32 35,32 15,42 Z" fill="#006780" />
-                        <path d="M25,52 C40,39 60,39 75,52 C60,45 40,45 25,52 Z" fill="#86d1ed" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h1 className="text-[#02273b] text-sm font-black tracking-tight leading-none">AL-FATH</h1>
-                      <p className="text-[8px] text-[#006780] font-bold mt-0.5 uppercase tracking-wider">Engineering Industries</p>
-                    </div>
-                  </div>
+              <div className="flex flex-col md:flex-row justify-between items-start mb-12 border-b border-surface-container-high pb-8 gap-4">
+                <div className="flex flex-col gap-4">
+                  <img 
+                    alt="Al-Fath Engineering Industries Logo" 
+                    className="h-20 w-auto object-contain" 
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuArXN-t3d9q_3fbo0qB3itz0xhAYPBY-VMmZYQnQpKv9ctfxF4MBhdI9HJbPGDA56gxSMfFI_xhfWistOwx7E1G3I7gaacsaR-5pCTyxxg_WoEoxH7mJZj3KJt57qP-sKqPlP4gMBXW9YLugctm4i9A1c4G1cfXY1U9Wy3hE6AwhIDIHO8nft8srj9AlcxH3Uqx0QfciBCEQ61DMDiiXeRpv1-HD6NiMoj79IJZZCpw5bLSM9I-6wK6G10rs0M_-V8n61ykqCloVMF3"
+                  />
                   <div className="mt-4">
-                    <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">Client</p>
-                    <h2 class="text-xs font-bold text-slate-800 uppercase">{formClientName || 'ELNADA FOR CONTRACTING'}</h2>
+                    <p className="font-label-sm text-outline tracking-wider uppercase mb-1">Client</p>
+                    <h2 className="font-headline-md text-on-surface font-bold uppercase">{formClientName || 'ELNADA FOR CONTRACTING'}</h2>
                   </div>
                 </div>
-                
-                <div className="text-right flex flex-col items-end">
-                  <h1 className="text-2xl font-black text-[#02273b] uppercase tracking-tight mb-1">Quotation</h1>
-                  <p className="text-[10px] text-slate-400 font-semibold">Reference: {formNumber}</p>
-                  <div className="flex gap-6 mt-4 text-right">
+                <div className="text-right mt-6 md:mt-0 flex flex-col items-end">
+                  <h1 className="font-headline-xl text-primary font-bold tracking-tight uppercase mb-2">Quotation</h1>
+                  <p className="font-body-md text-on-surface-variant mb-6">Reference: {formNumber}</p>
+                  <div className="flex gap-8 text-right">
                     <div>
-                      <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">Date</p>
-                      <p className="text-[10px] font-bold text-slate-850">{fmtDateEN(formDate)}</p>
+                      <p className="font-label-sm text-outline tracking-wider uppercase mb-1">Date</p>
+                      <p className="font-body-md text-on-surface font-medium">{fmtDateEN(formDate)}</p>
                     </div>
                     {formProjectName && (
                       <div>
-                        <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">Project</p>
-                        <p className="text-[10px] font-bold text-slate-850 uppercase">{formProjectName}</p>
+                        <p className="font-label-sm text-outline tracking-wider uppercase mb-1">Project</p>
+                        <p className="font-body-md text-on-surface font-medium uppercase">{formProjectName}</p>
                       </div>
                     )}
-                    <div>
-                      <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">Valid Until</p>
-                      <p className="text-[10px] font-bold text-slate-850">{fmtDateEN(formValidUntil)}</p>
-                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Product Hero Banner */}
-              <div className="relative w-full h-36 md:h-44 bg-slate-100 rounded-xl overflow-hidden border border-slate-200">
+              {/* Hero Section (Product Showcase) */}
+              <div className="relative w-full h-64 md:h-80 bg-surface-container rounded-lg overflow-hidden mb-12 group border border-outline-variant">
                 {bannerImage ? (
-                  <img src={bannerImage} alt="" className="w-full h-full object-cover"/>
+                  <img src={resolveImage(bannerImage)} alt="Product Showcase" className="w-full h-full object-cover object-center"/>
                 ) : (
                   <div className="w-full h-full flex items-center justify-center font-black text-slate-200 text-3xl">AL-FATH</div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-r from-[#02273b]/90 via-[#02273b]/50 to-transparent flex flex-col justify-center p-6">
-                  <p className="text-[8px] text-[#86d1ed] tracking-widest uppercase font-bold mb-1">Primary Fabrication</p>
-                  <h3 className="text-base text-white font-black max-w-sm leading-tight">{bannerTitle}</h3>
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/60 to-transparent flex flex-col justify-center p-8 md:p-12">
+                  <p className="font-label-sm text-secondary-fixed tracking-widest uppercase mb-2">Primary Fabrication</p>
+                  <h3 className="font-headline-lg text-white font-bold max-w-md leading-tight">{bannerTitle}</h3>
                 </div>
               </div>
 
-              {/* Section I Table */}
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="h-px bg-slate-200 flex-1"></div>
-                  <h4 className="text-[8px] font-bold uppercase text-slate-400 tracking-widest">I. Primary Fabrication Schedule</h4>
-                  <div class="h-px bg-slate-200 flex-1"></div>
+              {/* I. Primary Fabrication Schedule */}
+              <div className="mb-12">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="h-px bg-surface-container-high flex-1"></div>
+                  <h4 class="font-label-sm text-on-surface-variant tracking-widest uppercase">I. Primary Fabrication Schedule</h4>
+                  <div className="h-px bg-surface-container-high flex-1"></div>
                 </div>
-                
-                <table className="w-full border-collapse text-left text-xs">
-                  <thead>
-                    <tr class="bg-slate-50 border-y border-slate-200 text-[8px] font-bold text-slate-400 uppercase">
-                      <th class="py-2 px-3 w-10">Item</th>
-                      <th class="py-2 px-3">Description</th>
-                      <th class="py-2 px-3 text-right w-16">Unit</th>
-                      <th class="py-2 px-3 text-right w-20">Qty</th>
-                      <th class="py-2 px-3 text-right w-24">Rate (L.E)</th>
-                      <th class="py-2 px-3 text-right w-28">Total (L.E)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {uniqueSubsections.map((subSecName, subSecIdx) => {
-                      const subItems = liveTotals.items.filter(it => it.subsection === subSecName);
-                      return (
-                        <React.Fragment key={subSecName}>
-                          <tr className="bg-slate-100/60 font-bold border-b border-slate-200">
-                            <td colSpan={6} className="py-2 px-3 text-[9px] text-[#02273b] font-black uppercase">{subSecName}</td>
-                          </tr>
-                          {subItems.map((it, i) => (
-                            <tr key={it.id} className="border-b border-slate-200 last:border-0">
-                              <td className="py-4 px-3 text-slate-400 font-semibold align-top">{subSecIdx + 1}.{i + 1}</td>
-                              <td className="py-4 px-3 align-top">
-                                <p className="font-bold text-slate-800 uppercase mb-1">{it.itemTitle || it.productName}</p>
-                                {it.itemDesc && <p className="text-[10px] text-slate-500 mb-2 leading-relaxed">{it.itemDesc}</p>}
-                                {it.techNotes && (
-                                  <div className="bg-slate-50 border border-slate-150 rounded-lg p-2.5 mt-1.5">
-                                    <p className="text-[8px] font-bold text-[#02273b] uppercase tracking-wider mb-1">Technical Note:</p>
-                                    <p className="text-[10px] text-slate-500 whitespace-pre-wrap leading-relaxed">
-                                      {it.techNotes.includes('275 g/m²') ? (
-                                        <span>{it.techNotes.substring(0, it.techNotes.indexOf('275 g/m²'))}<strong className="text-red-500 font-bold">275 g/m²</strong>{it.techNotes.substring(it.techNotes.indexOf('275 g/m²') + '275 g/m²'.length)}</span>
-                                      ) : it.techNotes}
-                                    </p>
-                                  </div>
-                                )}
-                              </td>
-                              <td className="py-4 px-3 text-right text-slate-500 align-top">{it.unitType || '—'}</td>
-                              <td className="py-4 px-3 text-right font-semibold text-slate-700 align-top">{(it.qty || 0).toLocaleString('en')}</td>
-                              <td className="py-4 px-3 text-right text-slate-500 align-top">{fmtEN(it.unitPrice)}</td>
-                              <td className="py-4 px-3 text-right font-bold text-slate-850 align-top">{fmtEN(it.total)}</td>
+                <div className="w-full overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-surface border-y border-surface-container-high">
+                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase w-16">Item</th>
+                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase">Description</th>
+                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-24">Unit</th>
+                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-32">Qty</th>
+                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-32">Rate (L.E)</th>
+                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-40">Total (L.E)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="align-top">
+                      {uniqueSubsections.map((subSecName, subSecIdx) => {
+                        const subItems = liveTotals.items.filter(it => it.subsection === subSecName);
+                        return (
+                          <React.Fragment key={subSecName}>
+                            <tr className="bg-surface border-b border-surface-container-high font-bold">
+                              <td colSpan={6} className="py-2.5 px-4 text-xs text-primary uppercase tracking-wider font-extrabold">{subSecName}</td>
                             </tr>
-                          ))}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                            {subItems.map((it, i) => {
+                              const techNotesList = it.techNotes
+                                ? it.techNotes.split('\n').map(line => line.trim()).filter(line => line)
+                                : [];
+                              return (
+                                <tr key={it.id} className="border-b border-surface-container-high">
+                                  <td className="py-6 px-4 font-body-md text-on-surface font-medium align-top">
+                                    {subSecIdx + 1}.{i + 1}
+                                  </td>
+                                  <td className="py-6 px-4 align-top">
+                                    <p className="font-body-md text-on-surface font-bold mb-2 uppercase">
+                                      {it.itemTitle || it.productName}
+                                    </p>
+                                    {it.itemDesc && (
+                                      <p className="font-body-md text-on-surface-variant text-sm mb-4 leading-relaxed">
+                                        {it.itemDesc}
+                                      </p>
+                                    )}
+                                    {techNotesList.length > 0 && (
+                                      <div className="bg-surface p-4 rounded border border-surface-container-high mt-4">
+                                        <p className="font-label-sm text-primary uppercase mb-2">Technical Note:</p>
+                                        <ul className="font-body-md text-on-surface-variant text-sm space-y-1 list-none">
+                                          {techNotesList.map((line, lineIdx) => {
+                                            let formattedLine = line;
+                                            if (formattedLine.includes('275 g/m²')) {
+                                              const parts = formattedLine.split('275 g/m²');
+                                              return (
+                                                <li key={lineIdx} className="">
+                                                  {parts[0]}
+                                                  <strong className="text-error font-medium">275 g/m²</strong>
+                                                  {parts[1]}
+                                                </li>
+                                              );
+                                            }
+                                            return <li key={lineIdx} className="">{formattedLine}</li>;
+                                          })}
+                                        </ul>
+                                      </div>
+                                    )}
+                                  </td>
+                                  <td className="py-6 px-4 font-body-md text-on-surface text-right align-top">
+                                    {it.unitType || 'Ton'}
+                                  </td>
+                                  <td className="py-6 px-4 font-body-md text-on-surface text-right align-top">
+                                    {(it.qty || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </td>
+                                  <td className="py-6 px-4 font-body-md text-on-surface text-right align-top">
+                                    {fmtEN(it.unitPrice)}
+                                  </td>
+                                  <td className="py-6 px-4 font-body-md text-on-surface font-bold text-right align-top">
+                                    {fmtEN(it.total)}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
-              {/* Section II: Accessories */}
+              {/* II. Specialized Component Index */}
               {formAccessories.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="h-px bg-slate-200 flex-1"></div>
-                    <h4 className="text-[8px] font-bold uppercase text-slate-400 tracking-widest">II. Specialized Component Index</h4>
-                    <div class="h-px bg-slate-200 flex-1"></div>
+                <div className="mb-12">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="h-px bg-surface-container-high flex-1"></div>
+                    <h4 className="font-label-sm text-on-surface-variant tracking-widest uppercase">II. Specialized Component Index</h4>
+                    <div className="h-px bg-surface-container-high flex-1"></div>
                   </div>
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
                     {formAccessories.map((a, i) => (
-                      <div key={i} className="bg-slate-50 rounded-lg border border-slate-200 p-3 flex flex-col justify-between">
-                        <div>
-                          <div className="h-16 bg-white rounded border border-slate-100 flex items-center justify-center p-1 overflow-hidden mb-2">
-                            {a.image ? <img src={a.image} alt="" className="max-h-full max-w-full object-contain" style={{mixBlendMode:'multiply'}}/> : <span className="text-xl">📦</span>}
-                          </div>
-                          <h5 className="font-bold text-slate-800 text-[10px] leading-tight mb-0.5">{a.name}</h5>
-                          {a.description && <p className="text-[8px] text-slate-400 leading-normal mb-2">{a.description}</p>}
+                      <div key={i} className="bg-surface rounded border border-surface-container-high p-4 flex flex-col hover:border-secondary transition-colors">
+                        <div className="h-24 bg-surface-container-lowest rounded mb-3 flex items-center justify-center p-2 border border-surface-container">
+                          {a.image ? (
+                            <img className="h-full object-contain mix-blend-multiply" src={resolveImage(a.image)} alt={a.name} />
+                          ) : (
+                            <span className="text-2xl">📦</span>
+                          )}
                         </div>
-                        <div className="flex justify-between items-center border-t border-slate-150 pt-2 mt-auto">
-                          <span className="text-[8px] font-bold text-slate-400 uppercase">UNIT PRICE</span>
-                          <span className="text-[10px] font-black text-[#02273b]">${fmtEN(a.unitPrice)}</span>
+                        <h5 className="font-label-sm text-on-surface font-bold mb-1">{a.name}</h5>
+                        {a.description ? (
+                          <p className="font-body-md text-on-surface-variant text-xs mb-3 flex-1">{a.description}</p>
+                        ) : (
+                          <div className="flex-1"></div>
+                        )}
+                        <div className="flex justify-between items-end mt-auto pt-3 border-t border-surface-container-high">
+                          <span className="font-label-sm text-outline text-[10px]">UNIT PRICE</span>
+                          <span className="font-body-md text-primary font-bold">${fmtEN(a.unitPrice)}</span>
                         </div>
                       </div>
                     ))}
@@ -1082,30 +1217,34 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                 </div>
               )}
 
-              {/* Section III: Supplements */}
+              {/* III. Technical Supplements & Surcharges */}
               {(formWorkmanship.filter(r => r.desc).length > 0 || formTransformation.filter(r => r.desc).length > 0) && (
-                <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="h-px bg-slate-200 flex-1"></div>
-                    <h4 className="text-[8px] font-bold uppercase text-slate-400 tracking-widest">{formAccessories.length ? 'III' : 'II'}. Technical Supplements & Surcharges</h4>
-                    <div class="h-px bg-slate-200 flex-1"></div>
+                <div className="mb-12">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="h-px bg-surface-container-high flex-1"></div>
+                    <h4 className="font-label-sm text-on-surface-variant tracking-widest uppercase">
+                      {formAccessories.length > 0 ? 'III' : 'II'}. Technical Supplements & Surcharges
+                    </h4>
+                    <div className="h-px bg-surface-container-high flex-1"></div>
                   </div>
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                     {formWorkmanship.filter(r => r.desc).length > 0 && (
-                      <div className="space-y-2">
-                        <h5 className="text-[8px] font-bold text-[#02273b] uppercase flex items-center gap-1.5"><span className="w-3 h-px bg-[#02273b]"/>Assembly Workmanship</h5>
-                        <table className="w-full text-left text-[10px] border-collapse">
+                      <div>
+                        <h5 className="font-label-sm text-primary uppercase mb-3 flex items-center gap-2">
+                          <span className="w-4 h-px bg-primary"></span> Assembly Workmanship
+                        </h5>
+                        <table className="w-full text-left text-sm border-collapse">
                           <thead>
-                            <tr className="bg-slate-50 border-y border-slate-200 font-bold text-slate-400 uppercase text-[8px]">
-                              <th className="py-1 px-2">Description</th>
-                              <th className="py-1 px-2 text-right">Price (L.E)</th>
+                            <tr className="bg-surface border-y border-surface-container-high">
+                              <th className="py-2 px-3 font-label-sm text-on-surface-variant font-medium">Description</th>
+                              <th className="py-2 px-3 font-label-sm text-on-surface-variant font-medium text-right">Price (L.E)</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {formWorkmanship.filter(r => r.desc).map((r, i) => (
-                              <tr key={i} className="border-b border-slate-100">
-                                <td className="py-1.5 px-2 text-slate-650">{r.desc}</td>
-                                <td className="py-1.5 px-2 text-right font-semibold text-[#02273b]">{r.price}</td>
+                            {formWorkmanship.filter(r => r.desc).map((r, idx) => (
+                              <tr key={r.id} className={`border-b border-surface-container ${idx % 2 === 1 ? 'bg-surface-bright' : ''}`}>
+                                <td className="py-3 px-3 text-on-surface">{r.desc}</td>
+                                <td className="py-3 px-3 text-on-surface text-right font-medium">{r.price}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1113,20 +1252,22 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                       </div>
                     )}
                     {formTransformation.filter(r => r.desc).length > 0 && (
-                      <div className="space-y-2">
-                        <h5 className="text-[8px] font-bold text-[#02273b] uppercase flex items-center gap-1.5"><span className="w-3 h-px bg-[#02273b]"/>Transformation Surcharges</h5>
-                        <table className="w-full text-left text-[10px] border-collapse">
+                      <div>
+                        <h5 className="font-label-sm text-primary uppercase mb-3 flex items-center gap-2">
+                          <span className="w-4 h-px bg-primary"></span> Transformation Surcharges
+                        </h5>
+                        <table className="w-full text-left text-sm border-collapse">
                           <thead>
-                            <tr className="bg-slate-50 border-y border-slate-200 font-bold text-slate-400 uppercase text-[8px]">
-                              <th className="py-1 px-2">Description</th>
-                              <th className="py-1 px-2 text-right">Price (L.E)</th>
+                            <tr className="bg-surface border-y border-surface-container-high">
+                              <th className="py-2 px-3 font-label-sm text-on-surface-variant font-medium">Description</th>
+                              <th className="py-2 px-3 font-label-sm text-on-surface-variant font-medium text-right">Price (L.E)</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {formTransformation.filter(r => r.desc).map((r, i) => (
-                              <tr key={i} className="border-b border-slate-100">
-                                <td className="py-1.5 px-2 text-slate-650">{r.desc}</td>
-                                <td className="py-1.5 px-2 text-right font-semibold text-[#02273b]">{r.price}</td>
+                            {formTransformation.filter(r => r.desc).map((r, idx) => (
+                              <tr key={r.id} className={`border-b border-surface-container ${idx % 2 === 1 ? 'bg-surface-bright' : ''}`}>
+                                <td className="py-3 px-3 text-on-surface">{r.desc}</td>
+                                <td className="py-3 px-3 text-on-surface text-right font-medium">{r.price}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -1137,65 +1278,74 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                 </div>
               )}
 
-              {/* Section IV: Commercial Terms */}
-              <div className="bg-slate-50 rounded-xl border border-slate-200 p-4">
-                <h4 className="text-[8px] font-bold uppercase text-[#02273b] mb-3">IV. Commercial Terms</h4>
-                <div className="grid grid-cols-3 gap-4 text-[10px]">
+              {/* IV. Commercial Terms */}
+              <div className="mb-12 bg-surface p-6 rounded border border-surface-container-high text-left">
+                <h4 className="font-label-sm text-primary tracking-widest uppercase mb-6">IV. Commercial Terms</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
-                    <p className="text-[8px] font-bold text-slate-450 uppercase mb-1">Payment Structure</p>
-                    <p className="text-slate-600 leading-normal">{formPaymentTerms || '—'}</p>
+                    <p className="font-label-sm text-outline uppercase mb-2">Payment Structure</p>
+                    <p className="font-body-md text-on-surface text-sm">{formPaymentTerms || '—'}</p>
                   </div>
                   <div>
-                    <p className="text-[8px] font-bold text-slate-450 uppercase mb-1">Delivery Timeline</p>
-                    <p className="text-slate-600 leading-normal"><strong class="font-bold text-[#02273b]">{formDeliveryDays} Business Days</strong></p>
+                    <p className="font-label-sm text-outline uppercase mb-2">Delivery Timeline</p>
+                    <p className="font-body-md text-on-surface text-sm">Estimated <strong className="font-semibold text-primary">{formDeliveryDays} Business Days</strong> from receipt of advance payment and approved technical drawings.</p>
                   </div>
                   <div>
-                    <p className="text-[8px] font-bold text-slate-450 uppercase mb-1">Quote Validity</p>
-                    <p className="text-slate-600 leading-normal">Valid for <strong class="font-bold text-[#02273b]">{fmtDateEN(formValidUntil)}</strong></p>
+                    <p className="font-label-sm text-outline uppercase mb-2">Quote Validity</p>
+                    <p className="font-body-md text-on-surface text-sm">This quotation remains valid for <strong className="font-semibold text-primary">{getValidityDays()} Calendar Days</strong> from the issue date due to material market volatility.</p>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Bottom Signature & Total */}
-            <div className="mt-8 pt-6 border-t border-slate-200 flex justify-between items-end relative">
-              {/* Approved Stamp */}
-              <div style={{transform: 'rotate(-12deg)', opacity: 0.75}} className="absolute left-[40%] top-0 -translate-y-1/3 bg-white border-2.5 border-[#02273b] text-[#02273b] font-bold py-1.5 px-3 rounded-lg uppercase flex flex-col items-center gap-0.5">
-                <svg viewBox="0 0 100 65" className="w-8 h-4.5" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M10,32 C30,12 70,12 90,32 C70,22 30,22 10,32 Z" fill="#02273b" />
-                  <path d="M15,42 C35,25 65,25 85,42 C65,32 35,32 15,42 Z" fill="#006780" />
-                  <path d="M25,52 C40,39 60,39 75,52 C60,45 40,45 25,52 Z" fill="#86d1ed" />
-                </svg>
-                <div className="text-[7px] text-center font-black leading-none mt-0.5">
-                  AL-FATH ENGINEERING<br />
-                  <span className="text-[9px] font-black">APPROVED</span>
+              {/* Signatures & Total */}
+              <div className="mt-16 pt-8 border-t border-surface-container-high flex flex-col md:flex-row justify-between items-end relative text-left">
+                {/* Approved Stamp */}
+                <div style={{transform: 'rotate(-12deg)', opacity: 0.7}} className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 pointer-events-none no-print">
+                  <div className="border-4 border-primary text-primary font-headline-md font-bold py-3 px-6 rounded-lg uppercase tracking-widest bg-white/60 backdrop-blur-sm shadow-sm flex flex-col items-center gap-2">
+                    <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuDt2m7o8bhO8VPuO85SZ_iNx3ZA9MkqZnMHW5S8v3G2Ql-qCWwLWgOY0SG_PEnnaWFbLuxKQnCQd14naVxKA83HKXIJq5K5Z10i4Nb_21p0ZU2yomdsP3PmOwKEMqz8JBVUppxnGuuzvBkhCD8ujhJY-1BqwaQL_Gy9y-njZFSqkvGiJuieAMlM-ctygU6JHcDyF8h4ByqD0QpZKryqsqKhV3Fi6sfLmRYJGip-dDRYrEQ2K71BJNkqs5CgQWkOKyWMjuCulNpiQ7L5" alt="Al-Fath Logo" className="w-16 h-auto mix-blend-multiply opacity-90"/>
+                    <div className="text-center leading-tight">
+                      AL-FATH ENGINEERING<br />
+                      <span className="text-lg">APPROVED</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-full md:w-2/3 grid grid-cols-3 gap-4 mb-8 md:mb-0">
+                  <div className="text-center">
+                    <div className="h-16 border-b border-outline-variant mb-2"></div>
+                    <p className="font-label-sm text-on-surface-variant text-[10px] uppercase tracking-wider">Sales Management</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="h-16 border-b border-outline-variant mb-2"></div>
+                    <p className="font-label-sm text-on-surface-variant text-[10px] uppercase tracking-wider">Contract Control</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="h-16 border-b border-outline-variant mb-2"></div>
+                    <p className="font-label-sm text-on-surface-variant text-[10px] uppercase tracking-wider">General Manager</p>
+                  </div>
+                </div>
+
+                <div className="bg-surface-bright p-6 rounded border border-surface-container-high w-full md:w-auto min-w-[280px]">
+                  <div className="flex justify-between items-end mb-4">
+                    <span className="font-label-sm text-on-surface-variant uppercase tracking-widest">Grand Total <br /><span className="text-[10px]">(L.E)</span></span>
+                    <span className="font-headline-lg text-primary font-bold">{fmtEN(liveTotals.total)}</span>
+                  </div>
+                  <div className="border-t border-surface-container-high pt-3 flex justify-between items-center">
+                    <span className="font-label-sm text-outline text-[10px] uppercase">VAT Inclusive ({formTaxPct}%)</span>
+                    <span className="bg-secondary-container text-on-secondary-container font-label-sm px-2 py-1 rounded text-[10px] uppercase">Final Review</span>
+                  </div>
                 </div>
               </div>
 
-              <div className="w-[55%] grid grid-cols-3 gap-2">
-                <div className="text-center">
-                  <div className="h-10 border-b border-slate-200 mb-1"></div>
-                  <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Sales Management</p>
+              {/* Footer Notes */}
+              <div className="mt-12 flex justify-between items-center border-t border-surface-container pt-4 text-left">
+                <div className="flex gap-2">
+                  <span className="bg-surface-variant text-on-surface-variant font-label-sm px-2 py-1 rounded text-[10px] uppercase">Confidential</span>
+                  <span className="bg-surface-variant text-on-surface-variant font-label-sm px-2 py-1 rounded text-[10px] uppercase">Draft Ver. 4.2</span>
                 </div>
-                <div className="text-center">
-                  <div className="h-10 border-b border-slate-200 mb-1"></div>
-                  <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">Contract Control</p>
-                </div>
-                <div className="text-center">
-                  <div className="h-10 border-b border-slate-200 mb-1"></div>
-                  <p className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">General Manager</p>
-                </div>
-              </div>
-
-              <div className="bg-[#02273b] p-4 rounded-xl text-white min-w-[200px] text-right">
-                <div className="flex justify-between items-end mb-1">
-                  <span className="text-[8px] font-bold text-slate-350 uppercase">Grand Total (L.E)</span>
-                  <span className="text-lg font-black">{fmtEN(liveTotals.total)}</span>
-                </div>
-                <div className="border-t border-slate-700/60 pt-1 flex justify-between items-center text-[8px] text-slate-400">
-                  <span>VAT Inclusive (${formTaxPct}%)</span>
-                  <span className="bg-[#86d1ed] text-[#02273b] font-black px-1.5 py-0.5 rounded text-[7px] uppercase">Final Review</span>
-                </div>
+                <p className="font-body-md text-outline text-xs text-right">
+                  © {new Date().getFullYear()} Industrial Precision Fabrication. All Rights Reserved.
+                </p>
               </div>
             </div>
           </div>

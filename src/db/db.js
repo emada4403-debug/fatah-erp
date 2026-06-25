@@ -144,8 +144,10 @@ export const DB = {
     const lacksImages = this.getAll('products').some(p => p.id === 'prod_001' && !p.image);
     // Check if raw materials seed lacks images
     const lacksMatImages = this.getAll('raw_materials').some(m => m.id === 'mat_galv' && !m.image);
+    // Check if new seed for accessories is missing
+    const lacksAccessories = !this.getAll('products').some(p => p.id === 'prod_tdf_corner');
     
-    if (hasOldSeed || lacksImages || lacksMatImages) {
+    if (hasOldSeed || lacksImages || lacksMatImages || lacksAccessories) {
       // Clear localStorage tables related to seed data to trigger re-seed
       const tablesToClear = ['raw_materials', 'categories', 'products', 'quotes', 'clients', 'settings', 'price_history', 'deals'];
       tablesToClear.forEach(t => localStorage.removeItem(this._key(t)));
@@ -171,6 +173,7 @@ export const DB = {
       { id: 'cat_black', name: 'صاج اسود', icon: '⬛' },
       { id: 'cat_vd', name: 'فوليوم دامبر', icon: '🎛️' },
       { id: 'cat_outlets', name: 'مخارج هواء', icon: '💨' },
+      { id: 'cat_accessories', name: 'إكسسوارات ومكونات الفلنجة', icon: '🔩' },
     ];
     cats.forEach(c => this.insert('categories', c));
 
@@ -268,6 +271,54 @@ export const DB = {
         },
         marginPct: 25,
         active: true,
+      },
+      {
+        id: 'prod_tdf_corner',
+        name: 'TDF-CORNER',
+        code: 'TDF-C',
+        categoryId: 'cat_accessories',
+        unitType: 'pc',
+        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuABhTWmhfG6oQ-RpJDovEji_FoXEJw-HiLhPR1r6s-OgFWbfIa_28XwH9cffalnsk1JKLVIU5k_wywbUWF70NoyhqAkl4UgX8fHeckTbQE_bSr6r4knt8C8LKk9Mrlpt_eRP9EFAqru-Q26L-TjOp7xg_7e5Ci5gfMBMIuqglOqz5kh0N3ul-pWBx8buq4GnIkpxGl1OPtckONlH2Rz5P8Ua9G6MD6cuTh9xFQY1-CY4MV3OPseVscCjSXYTGFa_nuQVOeMIgN6GPkB',
+        minMarginPct: 10,
+        marginPct: 0,
+        priceOverride: 4.85,
+        active: true
+      },
+      {
+        id: 'prod_tdc_flange',
+        name: 'TDC-FLANGE-35',
+        code: 'TDC-F35',
+        categoryId: 'cat_accessories',
+        unitType: 'pc',
+        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDPrX3D1sXh-54TzGmSze-3GkM0QqW6_PLqmg9gQv2YsOpPcW22xQz_B-Pr26YN58xlpvDREEY2TUAcyyyyYwDtLamiatbeDmd6otIi2vv4XLceI2ncaDN6qA6_if9S6PyevASsyiXEEfx8m3_AshT8iaB3mEYc6lOH75S8JSegJU8BfdJLWlcsncW66eCh1sHArxtPTjEmj7WjXXWk_pk9bU8otSwHRjtAdVzK5mIqntMjpqKf9AG4ezHSYp7TdtmtNzJsOBFfUShd',
+        minMarginPct: 10,
+        marginPct: 0,
+        priceOverride: 12.40,
+        active: true
+      },
+      {
+        id: 'prod_g_clamp',
+        name: 'G-CLAMP',
+        code: 'G-CLAMP',
+        categoryId: 'cat_accessories',
+        unitType: 'pc',
+        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAJCy0TSqE7YBdf7j45z-WDgP9SA2qCX3NHxRCZhcUSE8iC6_9vECIjcEH5JoY9OG47ReOowB0MaarDg13V8N_LXhd2CVKkuyKDAwrz8QC-_ScM0Fk1d6XsGX6ciGkHPLoNJhgtOSoDlFpaytvuwFBjYfMfR9CIBmBqkci2bIiebClzWhCGGlMRIaAjBjBb9EWl7KOzyvSlfQ9rWenIFVxNLODvkInuZvIlt0Z8obp4bYWqYI-P8i-s_hm5v5NK-7oHf4AOX9uLdsO0',
+        minMarginPct: 10,
+        marginPct: 0,
+        priceOverride: 2.15,
+        active: true
+      },
+      {
+        id: 'prod_flex_duct',
+        name: 'FLEXIBLE DUCT (PU)',
+        code: 'FLEX-PU',
+        categoryId: 'cat_accessories',
+        unitType: 'M',
+        image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAwKam2fpuEvle2NLZAdizSbEEAF2H4zCnMBRhaI7oUGohEptGo97J7DDkuIXkYbDMv7a6d2LUQ3ijugPLiD2nv90FxHlrptJNKfluitE44KfjuCyNhrSEbwABjInuOcnwcmfSm3BmnUadKwzz8-aPRsruuLY5f3ZVy6zt_KmUvtPh0aHuJLZkFpfab4UdyySvkozqL_fZQ6HXvsV-aIuJmMEQmDtxxTxvfZS-KzbM0D7eQls0yfhNvqJBamALc419DhFPI5odzQ6DX',
+        minMarginPct: 10,
+        marginPct: 0,
+        priceOverride: 45.00,
+        active: true
       },
     ];
     products.forEach(p => this.insert('products', p));

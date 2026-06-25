@@ -2,7 +2,23 @@ import { DB } from './db.js';
 
 export const CostEngine = {
     calculate(product) {
-          if (!product || !product.costEngine) return null;
+          if (!product) return null;
+          if (product.priceOverride !== undefined && product.priceOverride !== null && product.priceOverride > 0) {
+            return {
+              rawTotal: 0,
+              rawBreakdown: [],
+              laborCost: 0,
+              overheadTotal: 0,
+              opsTotal: 0,
+              scrapCost: 0,
+              totalCost: product.priceOverride,
+              margin: 0,
+              finalPrice: product.priceOverride,
+              marginWarning: false,
+              minMargin: 0
+            };
+          }
+          if (!product.costEngine) return null;
           const ce = product.costEngine;
           const materials = DB.getAll('raw_materials');
 
