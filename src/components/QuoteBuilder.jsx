@@ -692,14 +692,6 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
         </div>
       </div>
 
-      <!-- Hero Section (Product Showcase) -->
-      <div class="relative w-full h-64 md:h-80 bg-surface-container rounded-lg overflow-hidden mb-12 group border border-outline-variant">
-        <img alt="Product Showcase" class="w-full h-full object-cover object-center" src="${resolveImage(bannerImage)}">
-        <div class="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/60 to-transparent flex flex-col justify-center p-8 md:p-12">
-          <p class="font-label-sm text-secondary-fixed tracking-widest uppercase mb-2">Primary Fabrication</p>
-          <h3 class="font-headline-lg text-white font-bold max-w-md leading-tight">${bannerTitle}</h3>
-        </div>
-      </div>
 
       <!-- I. Primary Fabrication Schedule -->
       <div class="mb-12">
@@ -1186,18 +1178,6 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                 </div>
               </div>
 
-              {/* Hero Section (Product Showcase) */}
-              <div className="relative w-full h-64 md:h-80 bg-surface-container rounded-lg overflow-hidden mb-12 group border border-outline-variant">
-                {bannerImage ? (
-                  <img src={resolveImage(bannerImage)} alt="Product Showcase" className="w-full h-full object-cover object-center"/>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center font-black text-slate-200 text-3xl">AL-FATH</div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/60 to-transparent flex flex-col justify-center p-8 md:p-12">
-                  <p className="font-label-sm text-secondary-fixed tracking-widest uppercase mb-2">Primary Fabrication</p>
-                  <h3 className="font-headline-lg text-white font-bold max-w-md leading-tight">{bannerTitle}</h3>
-                </div>
-              </div>
 
               {/* I. Primary Fabrication Schedule */}
               <div className="mb-12">

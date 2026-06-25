@@ -44,7 +44,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
     const map = {
       lead: { label: 'عميل محتمل', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
       active: { label: 'عميل فعلي', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-      vip: { label: 'VIP ⭐', cls: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+      vip: { label: 'VIP ⭐', cls: 'bg-purple-50 text-purple-700 border-purple-200' },
     };
     const item = map[type] || { label: 'غير محدد', cls: 'bg-slate-50 text-slate-600' };
     return (
@@ -255,19 +255,19 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
       {/* Title & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-slate-900">CRM وإدارة المبيعات</h2>
-          <p className="text-sm text-slate-500">إدارة العملاء، خط أنابيب الصفقات والمبيعات، ومتابعة جدول الاتصال اليومي</p>
+          <h2 className="text-xl font-bold text-[#02273b]">CRM وإدارة المبيعات</h2>
+          <p className="text-sm text-slate-500 font-semibold">إدارة العملاء، خط أنابيب الصفقات والمبيعات، ومتابعة جدول الاتصال اليومي</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={handleOpenAddClient}
-            className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-xl transition-all shadow-sm text-sm"
+            className="flex items-center justify-center gap-2 bg-[#006780] hover:bg-[#02273b] text-white font-bold px-4 py-2.5 rounded-xl transition-all shadow-md shadow-[#006780]/10 text-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" /> إضافة عميل
           </button>
           <button
             onClick={() => handleOpenAddDeal('lead', '')}
-            className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold px-4 py-2.5 rounded-xl transition-all shadow-sm text-sm"
+            className="flex items-center justify-center gap-2 bg-[#02273b] hover:bg-slate-800 text-white font-bold px-4 py-2.5 rounded-xl transition-all shadow-md shadow-[#02273b]/10 text-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" /> إضافة صفقة
           </button>
@@ -278,24 +278,24 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
       <div className="flex border-b border-slate-200 overflow-x-auto text-sm gap-2">
         <button
           onClick={() => setActiveTab('clients')}
-          className={`pb-3 px-4 font-semibold whitespace-nowrap border-b-2 transition-all ${
-            activeTab === 'clients' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'
+          className={`pb-3 px-4 font-bold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
+            activeTab === 'clients' ? 'border-[#006780] text-[#006780]' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
           دليل العملاء ({clients.length})
         </button>
         <button
           onClick={() => setActiveTab('pipeline')}
-          className={`pb-3 px-4 font-semibold whitespace-nowrap border-b-2 transition-all ${
-            activeTab === 'pipeline' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'
+          className={`pb-3 px-4 font-bold whitespace-nowrap border-b-2 transition-all cursor-pointer ${
+            activeTab === 'pipeline' ? 'border-[#006780] text-[#006780]' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
           خط المبيعات (Pipeline Kanban)
         </button>
         <button
           onClick={() => setActiveTab('followups')}
-          className={`pb-3 px-4 font-semibold whitespace-nowrap border-b-2 transition-all flex items-center gap-1.5 ${
-            activeTab === 'followups' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'
+          className={`pb-3 px-4 font-bold whitespace-nowrap border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
+            activeTab === 'followups' ? 'border-[#006780] text-[#006780]' : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
           متابعات اليوم
@@ -319,7 +319,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                 placeholder="ابحث باسم العميل أو الشركة أو رقم الهاتف..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm bg-slate-50/50"
+                className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#006780] focus:border-transparent text-sm bg-slate-50/50 font-semibold"
               />
             </div>
           </div>
@@ -345,9 +345,9 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                             {(c.name || '؟')[0]}
                           </div>
                           <div>
-                            <h3 className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors">{c.name}</h3>
+                            <h3 className="font-bold text-slate-900 text-sm group-hover:text-[#006780] transition-colors">{c.name}</h3>
                             {c.company && (
-                              <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                              <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5 font-semibold">
                                 <Building className="w-3.5 h-3.5" /> {c.company}
                               </p>
                             )}
@@ -356,7 +356,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                         {getClientTypeBadge(c.type)}
                       </div>
 
-                      <div className="space-y-1.5 text-xs text-slate-500">
+                      <div className="space-y-1.5 text-xs text-slate-500 font-semibold">
                         {c.phone && <div className="flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" /> {c.phone}</div>}
                         {c.email && <div className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {c.email}</div>}
                         {c.address && <div className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" /> {c.address}</div>}
@@ -366,9 +366,9 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
 
                       <div className="flex justify-between items-center text-xs">
                         <div>{getStageBadge(c.stage)}</div>
-                        <div className="text-left">
-                          <div className="text-slate-400">عروض الأسعار: <span className="font-semibold text-slate-800">{cQuotes.length}</span></div>
-                          {dealSuccessVal > 0 && <div className="font-bold text-emerald-600 mt-0.5">{formatCurrency(dealSuccessVal)}</div>}
+                        <div className="text-left font-semibold">
+                          <div className="text-slate-400">عروض الأسعار: <span className="font-bold text-slate-800">{cQuotes.length}</span></div>
+                          {dealSuccessVal > 0 && <div className="font-black text-emerald-600 mt-0.5">{formatCurrency(dealSuccessVal)}</div>}
                         </div>
                       </div>
                     </div>
@@ -376,19 +376,19 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                     <div className="flex gap-2 mt-4 pt-4 border-t border-slate-50">
                       <button
                         onClick={(e) => { e.stopPropagation(); handleOpenEditClient(c); }}
-                        className="flex-grow bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-1"
+                        className="flex-grow bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-1 cursor-pointer"
                       >
                         <Edit className="w-3.5 h-3.5" /> تعديل البيانات
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleOpenAddDeal('lead', c.id); }}
-                        className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-2 rounded-lg transition-colors"
+                        className="bg-[#006780]/10 hover:bg-[#006780]/20 text-[#006780] text-xs font-bold px-3 py-2 rounded-lg transition-colors cursor-pointer"
                       >
                         + صفقة
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleDeleteClient(c); }}
-                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                        className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -413,12 +413,15 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
               const stageDeals = deals.filter(d => d.stage === stage.id);
               const stageVal = stageDeals.reduce((sum, d) => sum + (d.value || 0), 0);
 
+              // Extract border-t-xxx color from stage.color
+              const stageBorderClass = stage.color.split(' ')[0] || 'border-t-slate-400';
+
               return (
                 <div key={stage.id} className="flex-1 bg-slate-50/70 border border-slate-100 rounded-2xl flex flex-col p-4">
                   {/* Stage Header */}
-                  <div className="flex items-center justify-between border-t-2 border-t-indigo-500 pt-2 pb-4">
-                    <span className="font-bold text-slate-900 text-xs">{stage.label}</span>
-                    <div className="text-left">
+                  <div className={`flex items-center justify-between border-t-2 ${stageBorderClass} pt-2.5 pb-4`}>
+                    <span className="font-bold text-[#02273b] text-xs">{stage.label}</span>
+                    <div className="text-left font-semibold">
                       <span className="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded-full">{stageDeals.length}</span>
                       {stageVal > 0 && <div className="text-[10px] text-emerald-600 font-bold mt-0.5">{formatCurrency(stageVal)}</div>}
                     </div>
@@ -430,18 +433,26 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                       const cli = clients.find(c => c.id === d.clientId);
                       const isOverdue = d.followUpDate && new Date(d.followUpDate) < new Date();
 
+                      // Select side border color depending on stage
+                      const cardBorderClass = 
+                        d.stage === 'lead' ? 'border-r-amber-500/50' : 
+                        d.stage === 'contact' ? 'border-r-blue-500/50' : 
+                        d.stage === 'quote' ? 'border-r-purple-500/50' : 
+                        d.stage === 'negotiation' ? 'border-r-cyan-500/50' : 
+                        d.stage === 'deal' ? 'border-r-emerald-500/50' : 'border-r-rose-500/50';
+
                       return (
                         <div
                           key={d.id}
                           onClick={() => handleOpenEditDeal(d)}
-                          className="bg-white p-3.5 rounded-xl border border-slate-100 shadow-xs hover:shadow-md transition-all cursor-pointer space-y-2 border-r-4 border-r-indigo-500/20"
+                          className={`bg-white p-3.5 rounded-xl border border-slate-100 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer space-y-2 border-r-4 ${cardBorderClass}`}
                         >
                           <div className="font-bold text-slate-800 text-xs line-clamp-1">{d.title}</div>
-                          {cli && <div className="text-[11px] text-slate-400 flex items-center gap-0.5"><User className="w-3 h-3" /> {cli.name}</div>}
-                          {d.value > 0 && <div className="text-xs font-bold text-emerald-600">{formatCurrency(d.value)}</div>}
+                          {cli && <div className="text-[11px] text-slate-400 font-semibold flex items-center gap-0.5"><User className="w-3 h-3" /> {cli.name} {cli.company && `(${cli.company})`}</div>}
+                          {d.value > 0 && <div className="text-xs font-black text-emerald-600">{formatCurrency(d.value)}</div>}
 
                           {d.followUpDate && (
-                            <div className={`text-[10px] flex items-center gap-1 font-semibold ${isOverdue ? 'text-rose-600' : 'text-slate-400'}`}>
+                            <div className={`text-[10px] flex items-center gap-1 font-bold ${isOverdue ? 'text-rose-600 animate-pulse' : 'text-slate-400'}`}>
                               <Calendar className="w-3.5 h-3.5" />
                               {isOverdue && <span>⚠️ متأخرة: </span>}
                               {formatDate(d.followUpDate)}
@@ -453,7 +464,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
 
                     <button
                       onClick={() => handleOpenAddDeal(stage.id, '')}
-                      className="w-full py-2 bg-white hover:bg-slate-100 border border-dashed border-slate-200 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-700 transition-all flex items-center justify-center gap-1"
+                      className="w-full py-2 bg-white hover:bg-slate-100 border border-dashed border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-700 transition-all flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-4 h-4" /> إضافة صفقة
                     </button>
@@ -505,7 +516,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                         <td className="p-4 text-center">
                           <button
                             onClick={() => handleOpenEditDeal(d)}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-3.5 py-1.5 rounded-lg transition-colors"
+                            className="bg-[#006780] hover:bg-[#02273b] text-white font-bold text-xs px-3.5 py-1.5 rounded-lg transition-colors cursor-pointer"
                           >
                             تحديث المتابعة
                           </button>
@@ -535,9 +546,9 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
             <div className="bg-white w-full max-w-3xl rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[85vh]">
-              <div className="bg-slate-900 text-white p-5 flex items-center justify-between flex-shrink-0">
+              <div className="bg-[#02273b] text-white p-5 flex items-center justify-between flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center font-bold">
+                  <div className="w-10 h-10 rounded-full bg-[#006780] flex items-center justify-center font-bold">
                     {(viewingClient.name || '؟')[0]}
                   </div>
                   <div>
@@ -585,7 +596,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">🤝 الصفقات والفرص الحالية</h4>
                     <button
                       onClick={() => handleOpenAddDeal('lead', viewingClient.id)}
-                      className="text-xs text-indigo-600 hover:text-indigo-700 font-bold"
+                      className="text-xs text-[#006780] hover:text-[#02273b] font-bold cursor-pointer"
                     >
                       + صفقة جديدة
                     </button>
@@ -641,7 +652,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                         {cQuotes.length ? (
                           cQuotes.map((q, i) => (
                             <tr key={i} className="hover:bg-slate-50/30">
-                              <td className="p-3 font-bold text-indigo-600">{q.number}</td>
+                              <td className="p-3 font-bold text-[#006780]">{q.number}</td>
                               <td className="p-3">{q.projectName || '-'}</td>
                               <td className="p-3 font-semibold text-slate-900">{formatCurrency(q.total)}</td>
                               <td className="p-3">{getStageBadge(q.status)}</td>
@@ -680,13 +691,13 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
       {editingClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
+            <div className="bg-[#02273b] text-white p-5 flex items-center justify-between">
               <h3 className="font-bold text-base">
                 {isAddClientMode ? '👤 إضافة عميل جديد' : '✏️ تعديل بيانات العميل'}
               </h3>
               <button
                 onClick={() => setEditingClient(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-[#02273b]/80 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -699,7 +710,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                   type="text"
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white font-semibold"
                   placeholder="مثال: م. أحمد عبد العزيز"
                 />
               </div>
@@ -709,7 +720,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                   type="text"
                   value={clientCompany}
                   onChange={(e) => setClientCompany(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white font-semibold"
                   placeholder="مثال: شركة الإنشاءات الحديثة"
                 />
               </div>
@@ -720,7 +731,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                     type="text"
                     value={clientPhone}
                     onChange={(e) => setClientPhone(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white text-left font-mono"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white text-left font-mono font-semibold"
                     placeholder="01xxxxxxxxx"
                   />
                 </div>
@@ -730,7 +741,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                     type="email"
                     value={clientEmail}
                     onChange={(e) => setClientEmail(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white text-left"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white text-left font-semibold"
                     placeholder="client@mail.com"
                   />
                 </div>
@@ -741,7 +752,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                   type="text"
                   value={clientAddress}
                   onChange={(e) => setClientAddress(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white font-semibold"
                   placeholder="العنوان التفصيلي"
                 />
               </div>
@@ -751,7 +762,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                   <select
                     value={clientType}
                     onChange={(e) => setClientType(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white font-semibold"
                   >
                     <option value="lead">عميل محتمل (Lead)</option>
                     <option value="active">عميل فعلي (Active)</option>
@@ -763,7 +774,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                   <select
                     value={clientStage}
                     onChange={(e) => setClientStage(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white font-semibold"
                   >
                     <option value="lead">Lead 🎯</option>
                     <option value="contact">تواصل 📞</option>
@@ -779,7 +790,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                 <textarea
                   value={clientNotes}
                   onChange={(e) => setClientNotes(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white font-semibold"
                   rows="3"
                 />
               </div>
@@ -788,13 +799,13 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
             <div className="bg-slate-50 p-4 border-t border-slate-100 flex justify-end gap-2">
               <button
                 onClick={() => setEditingClient(null)}
-                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-semibold transition-colors"
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
               >
                 إلغاء
               </button>
               <button
                 onClick={handleSaveClient}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm"
+                className="px-4 py-2 bg-[#006780] hover:bg-[#02273b] text-white rounded-lg text-xs font-bold transition-colors shadow-md shadow-[#006780]/10 cursor-pointer"
               >
                 حفظ البيانات
               </button>
@@ -807,13 +818,13 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
       {editingDeal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="bg-slate-900 text-white p-5 flex items-center justify-between">
+            <div className="bg-[#02273b] text-white p-5 flex items-center justify-between">
               <h3 className="font-bold text-base">
                 {isAddDealMode ? '🤝 إضافة صفقة / فرصة جديدة' : '✏️ تعديل تفاصيل الصفقة'}
               </h3>
               <button
                 onClick={() => setEditingDeal(null)}
-                className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+                className="text-slate-300 hover:text-white p-1 rounded-lg hover:bg-white/10 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -826,7 +837,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                   type="text"
                   value={dealTitle}
                   onChange={(e) => setDealTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white"
                   placeholder="مثال: توريد 500 كجم ألومنيوم لمبنى أكتوبر"
                 />
               </div>
@@ -835,7 +846,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                 <select
                   value={dealClientId}
                   onChange={(e) => setDealClientId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white font-semibold"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white font-semibold"
                 >
                   <option value="">-- اختر عميلاً --</option>
                   {clients.map(c => (
@@ -850,7 +861,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                     type="number"
                     value={dealValue || ''}
                     onChange={(e) => setDealValue(parseFloat(e.target.value) || 0)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white font-bold"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white font-bold"
                     placeholder="0"
                   />
                 </div>
@@ -859,7 +870,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                   <select
                     value={dealStage}
                     onChange={(e) => setDealStage(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white font-semibold"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white font-semibold"
                   >
                     <option value="lead">Lead 🎯</option>
                     <option value="contact">تواصل 📞</option>
@@ -876,7 +887,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                   type="date"
                   value={dealFollowUpDate}
                   onChange={(e) => setDealFollowUpDate(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white font-bold"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white font-bold"
                 />
               </div>
               <div>
@@ -884,7 +895,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                 <textarea
                   value={dealNotes}
                   onChange={(e) => setDealNotes(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white"
                   rows="3"
                   placeholder="ملاحظات المتابعة والاتصال..."
                 />
@@ -909,7 +920,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
                 </button>
                 <button
                   onClick={handleSaveDeal}
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm"
+                  className="px-4 py-2 bg-[#006780] hover:bg-[#02273b] text-white rounded-lg text-xs font-semibold transition-colors shadow-md shadow-[#006780]/10"
                 >
                   حفظ الصفقة
                 </button>
