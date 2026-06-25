@@ -29,6 +29,31 @@ export default function App() {
   const [pendingTab, setPendingTab] = useState(null);
   const [pinError, setPinError] = useState(false);
 
+  // Synchronize React state with DB (localStorage)
+  const syncData = () => {
+    setProducts(DB.getAll('products'));
+    setMaterials(DB.getAll('raw_materials'));
+    setCategories(DB.getAll('categories'));
+    setQuotes(DB.getAll('quotes'));
+    setClients(DB.getAll('clients'));
+    setDeals(DB.getAll('deals'));
+    setPriceHistory(DB.getAll('price_history'));
+    
+    const s = DB.getAll('settings')[0] || {
+      name: 'مصنع الفتح للصناعات المعدنية',
+      currency: 'جنيه'
+    };
+    setSettings(s);
+
+    // Check PIN session
+    if (s.adminPin) {
+      const sessionUnlocked = sessionStorage.getItem('fatah_erp_is_admin') === 'true';
+      setIsAdmin(sessionUnlocked);
+    } else {
+      setIsAdmin(true); // Unlocked if no pin is set
+    }
+  };
+
   // Initialize DB and state on first load
   useEffect(() => {
     const initialize = async () => {
@@ -78,31 +103,6 @@ export default function App() {
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, [activeTab]);
-
-  // Synchronize React state with DB (localStorage)
-  const syncData = () => {
-    setProducts(DB.getAll('products'));
-    setMaterials(DB.getAll('raw_materials'));
-    setCategories(DB.getAll('categories'));
-    setQuotes(DB.getAll('quotes'));
-    setClients(DB.getAll('clients'));
-    setDeals(DB.getAll('deals'));
-    setPriceHistory(DB.getAll('price_history'));
-    
-    const s = DB.getAll('settings')[0] || {
-      name: 'مصنع الفتح للصناعات المعدنية',
-      currency: 'جنيه'
-    };
-    setSettings(s);
-
-    // Check PIN session
-    if (s.adminPin) {
-      const sessionUnlocked = sessionStorage.getItem('fatah_erp_is_admin') === 'true';
-      setIsAdmin(sessionUnlocked);
-    } else {
-      setIsAdmin(true); // Unlocked if no pin is set
-    }
-  };
 
   // Change tab helper
   const handleTabChange = (tabId) => {

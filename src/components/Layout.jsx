@@ -10,7 +10,9 @@ import {
   Menu, 
   X, 
   Calendar,
-  Lock
+  Lock,
+  HelpCircle,
+  LogOut
 } from 'lucide-react';
 
 export default function Layout({ 
@@ -44,9 +46,6 @@ export default function Layout({
     return true;
   });
 
-  const activeItem = navItems.find(item => item.id === activeTab) || navItems[0];
-  const IconComponent = activeItem.icon;
-
   const getTodayArabicDate = () => {
     return new Date().toLocaleDateString('ar-EG', {
       weekday: 'long', 
@@ -67,22 +66,28 @@ export default function Layout({
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed top-0 bottom-0 right-0 z-50 w-64 bg-slate-900 text-slate-300 border-l border-slate-800 flex flex-col justify-between transform transition-transform duration-250 lg:translate-x-0 lg:static lg:h-screen ${
+      <aside className={`fixed top-0 bottom-0 right-0 z-50 w-64 bg-[#031f30] text-slate-300 border-l border-slate-800/80 flex flex-col justify-between transform transition-transform duration-250 lg:translate-x-0 lg:static lg:h-screen ${
         isSidebarOpen ? 'translate-x-0' : 'translate-x-full'
       }`}>
         <div className="flex flex-col flex-grow">
-          {/* Sidebar Header (Logo) */}
-          <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-black text-white text-base">ف</div>
-              <span className="font-extrabold text-white text-base truncate">{settings.name || 'مصنع الفتح'}</span>
-            </div>
+          {/* Sidebar Header (Logo Card) */}
+          <div className="flex flex-col items-center pt-8 pb-6 border-b border-slate-800/60 px-6 relative">
             <button 
               onClick={() => setIsSidebarOpen(false)}
-              className="lg:hidden p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              className="lg:hidden absolute top-4 left-4 p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
+            <div className="bg-white rounded-2xl p-3 flex flex-col items-center justify-center shadow-md w-24 h-24 mb-3 border border-slate-100">
+              <svg viewBox="0 0 100 65" className="w-16 h-10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M10,32 C30,12 70,12 90,32 C70,22 30,22 10,32 Z" fill="#02273b" />
+                <path d="M15,42 C35,25 65,25 85,42 C65,32 35,32 15,42 Z" fill="#006780" />
+                <path d="M25,52 C40,39 60,39 75,52 C60,45 40,45 25,52 Z" fill="#86d1ed" />
+              </svg>
+              <span className="font-extrabold text-[10px] tracking-wider text-[#02273b] mt-1.5 font-sans">AL-FATH</span>
+            </div>
+            <h1 className="font-black text-white text-base tracking-wide">الفتح ERP</h1>
+            <p className="text-[10px] font-bold text-slate-400 mt-0.5">الإدارة الصناعية</p>
           </div>
 
           {/* Nav Items */}
@@ -98,14 +103,15 @@ export default function Layout({
                     onTabChange(item.id);
                     setIsSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition-all duration-150 ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition-all duration-155 relative overflow-hidden ${
                     isActive 
-                      ? 'bg-indigo-600 text-white font-bold' 
-                      : 'hover:bg-slate-800 text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#86d1ed] text-[#02273b] font-extrabold shadow-sm' 
+                      : 'hover:bg-slate-800/40 text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  <ItemIcon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                  <ItemIcon className={`w-5 h-5 ${isActive ? 'text-[#02273b]' : 'text-slate-400'}`} />
                   <span>{item.label}</span>
+                  {isActive && <div className="absolute right-0 top-0 bottom-0 w-1 bg-[#02273b]" />}
                 </button>
               );
             })}
@@ -113,8 +119,18 @@ export default function Layout({
         </div>
 
         {/* Sidebar Footer */}
-        <div className="p-4 border-t border-slate-800 text-center text-[10px] text-slate-500 font-medium">
-          نظام الفتح ERP المتكامل v2.0
+        <div className="p-4 border-t border-slate-800/60 space-y-1">
+          <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800/40 transition-all cursor-pointer">
+            <HelpCircle className="w-4 h-4 text-slate-400" />
+            <span>الدعم الفني</span>
+          </button>
+          <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-rose-400 hover:bg-rose-950/20 transition-all cursor-pointer">
+            <LogOut className="w-4 h-4 text-slate-400" />
+            <span>تسجيل الخروج</span>
+          </button>
+          <div className="pt-3 text-center text-[9px] text-slate-500 font-medium border-t border-slate-800/30">
+            نظام الفتح ERP المتكامل v2.0
+          </div>
         </div>
       </aside>
 
@@ -122,6 +138,7 @@ export default function Layout({
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Topbar */}
         <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-6 flex-shrink-0">
+          {/* RTL right: Menu & Date widget & Admin status */}
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setIsSidebarOpen(true)}
@@ -129,39 +146,59 @@ export default function Layout({
             >
               <Menu className="w-5 h-5" />
             </button>
-            <div className="hidden sm:flex items-center gap-2 text-slate-800 font-bold text-sm">
-              <IconComponent className="w-5 h-5 text-indigo-500" />
-              <span>{activeItem.label}</span>
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-100 px-3.5 py-1.5 rounded-xl">
+              <Calendar className="w-4 h-4 text-[#006780]" />
+              <span>{getTodayArabicDate()}</span>
             </div>
-          </div>
-
-          {/* Admin Lock / Date Widget */}
-          <div className="flex items-center gap-2">
             {hasPin && (
               isAdmin ? (
                 <button 
                   onClick={onLock}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10px] font-bold transition-all cursor-pointer"
                   title="خروج الإدارة وتأمين الحسابات"
                 >
-                  <Lock className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">قفل لوحة الإدارة</span>
+                  <Lock className="w-3 h-3" />
+                  <span>قفل الإدارة</span>
                 </button>
               ) : (
                 <button 
                   onClick={onUnlock}
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-all cursor-pointer animate-pulse"
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-xl border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold transition-all cursor-pointer animate-pulse"
                   title="تسجيل دخول المدير ورؤية التكاليف"
                 >
-                  <Lock className="w-3.5 h-3.5" />
+                  <Lock className="w-3 h-3" />
                   <span>دخول الإدارة</span>
                 </button>
               )
             )}
+          </div>
 
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 bg-slate-50 border border-slate-100 px-3.5 py-1.5 rounded-xl">
-              <Calendar className="w-4 h-4 text-indigo-500" />
-              <span>{getTodayArabicDate()}</span>
+          {/* RTL left: Company Title & icons & profile avatar */}
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold text-slate-700 hidden sm:inline">مصنع الفتح للصناعات الهندسية</span>
+            
+            <div className="h-4 w-px bg-slate-200 hidden sm:block"></div>
+            
+            <div className="flex items-center gap-1">
+              <button className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 relative cursor-pointer" title="البحث">
+                <svg viewBox="0 0 24 24" className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </button>
+              <button className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 relative cursor-pointer" title="الإشعارات">
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-[#006780] rounded-full border border-white"></span>
+                <svg viewBox="0 0 24 24" className="w-4.5 h-4.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden border border-slate-300 shadow-sm flex items-center justify-center">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 text-slate-600" fill="currentColor">
+                <path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14.6C14.7,14.6 18.8,15.9 19,18.6A8.5,8.5 0 0,1 12,20A8.5,8.5 0 0,1 5,18.6C5.2,15.9 9.3,14.6 12,14.6Z"/>
+              </svg>
             </div>
           </div>
         </header>

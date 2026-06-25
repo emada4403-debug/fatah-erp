@@ -49,6 +49,7 @@ export default function Dashboard({
 }) {
 
   // Helpers
+  const todayStr = new Date().toISOString().split('T')[0];
   const formatCurrency = (val) => {
     return (val || 0).toLocaleString('ar-EG', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' ' + (settings.currency || 'جنيه');
   };

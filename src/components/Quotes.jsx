@@ -251,12 +251,11 @@ export default function Quotes({ quotes, clients, products, settings, onUpdate }
 
   // ── Live totals ───────────────────────────────────────────────────────────────
   const liveTotals = (() => {
-    let sub=0;
     const items = formItems.map(it => {
       const s=(it.qty||0)*(it.unitPrice||0), d=s*((it.discountPct||0)/100), t=s-d;
-      sub+=t;
       return {...it,subtotal:s,discountAmt:d,total:t};
     });
+    const sub = items.reduce((acc, it) => acc + (it.total || 0), 0);
     const disc=sub*((parseFloat(formDiscountPct)||0)/100);
     const after=sub-disc;
     const tax=after*((parseFloat(formTaxPct)||0)/100);
@@ -685,7 +684,7 @@ export default function Quotes({ quotes, clients, products, settings, onUpdate }
                         <div>
                           <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">اضغط لإضافة / حذف:</p>
                           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-44 overflow-y-auto pr-1">
-                            {products.filter(p=>p.active!==false).map(prod=>{
+                            {products.filter(p=>p.active!==false && p.categoryId !== 'cat_galvanized' && p.categoryId !== 'cat_black').map(prod=>{
                               const added=formAccessories.some(a=>a.productId===prod.id);
                               return <button key={prod.id} type="button" onClick={()=>added?handleRemoveAccessory(prod.id):handleAddAccessory(prod)}
                                 className={`flex flex-col items-center gap-1.5 p-2 rounded-lg border text-center text-xs transition-all ${added?'border-[#006780] bg-[#006780]/5 text-[#02273b] font-bold':'border-slate-200 hover:border-slate-300 text-slate-600'}`}>

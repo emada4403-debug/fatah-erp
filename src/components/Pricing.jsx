@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   Plus, Search, Calendar, History, TrendingUp, TrendingDown, 
-  ArrowLeftRight, Trash2, Edit3, X, Percent, Check, Upload, Image, ShieldCheck 
+  ArrowLeftRight, Trash2, Edit3, X, Percent, Check, Upload, Image, ShieldCheck,
+  Package
 } from 'lucide-react';
 import { DB } from '../db/db.js';
 import { CostEngine } from '../db/costEngine.js';
