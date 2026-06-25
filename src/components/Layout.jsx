@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, 
   Package, 
@@ -12,13 +12,74 @@ import {
   Calendar,
   Lock,
   HelpCircle,
-  LogOut
+  LogOut,
+  ChevronDown,
+  Layers
 } from 'lucide-react';
+
+
+// Collapsible navigation sub-menu item component
+function CollapsibleNavItem({ item, activeTab, onTabChange, setIsSidebarOpen }) {
+  const isChildActive = item.subItems.some(sub => sub.id === activeTab);
+  const [isOpen, setIsOpen] = useState(isChildActive || activeTab.startsWith('quote_builder'));
+
+  useEffect(() => {
+    if (isChildActive) {
+      setIsOpen(true);
+    }
+  }, [activeTab, isChildActive]);
+
+  const ItemIcon = item.icon;
+
+  return (
+    <div className="space-y-1">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-xs font-semibold transition-all duration-155 cursor-pointer ${
+          isChildActive
+            ? 'bg-slate-800/40 text-[#86d1ed]' 
+            : 'hover:bg-slate-800/40 text-slate-400 hover:text-slate-200'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <ItemIcon className={`w-5 h-5 ${isChildActive ? 'text-[#86d1ed]' : 'text-slate-400'}`} />
+          <span>{item.label}</span>
+        </div>
+        <ChevronDown className={`w-4 h-4 transition-transform duration-205 ${isOpen ? 'rotate-180 text-white' : 'text-slate-400'}`} />
+      </button>
+      
+      {isOpen && (
+        <div className="mr-4 pr-3 border-r border-slate-805/40 space-y-1 mt-1">
+          {item.subItems.map((sub) => {
+            const isSubActive = sub.id === activeTab;
+            return (
+              <button
+                key={sub.id}
+                onClick={() => {
+                  onTabChange(sub.id);
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-[11px] font-semibold transition-all duration-155 relative overflow-hidden cursor-pointer ${
+                  isSubActive
+                    ? 'bg-[#86d1ed] text-[#02273b] font-extrabold shadow-sm'
+                    : 'hover:bg-slate-800/30 text-slate-400 hover:text-slate-205'
+                }`}
+              >
+                <div className={`w-1.5 h-1.5 rounded-full ${isSubActive ? 'bg-[#02273b]' : 'bg-slate-600'}`} />
+                <span>{sub.label}</span>
+                {isSubActive && <div className="absolute right-0 top-0 bottom-0 w-1 bg-[#02273b]" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function Layout({ 
   activeTab, 
   onTabChange, 
-  settings, 
   isAdmin, 
   hasPin, 
   onLock, 
@@ -31,6 +92,16 @@ export default function Layout({
     { id: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard },
     { id: 'products', label: 'إدارة المنتجات', icon: Package },
     { id: 'pricing', label: 'التسعير الديناميكي', icon: TrendingUp },
+    { 
+      id: 'quote_builder', 
+      label: 'إنشاء عرض سعر', 
+      icon: Layers,
+      subItems: [
+        { id: 'quote_builder_galvanized', label: 'صاج مجلفن' },
+        { id: 'quote_builder_black', label: 'صاج أسود' },
+        { id: 'quote_builder_general', label: 'عام / أخرى' }
+      ]
+    },
     { id: 'quotes', label: 'عروض الأسعار', icon: FileText },
     { id: 'crm', label: 'إدارة العملاء CRM', icon: Users },
     { id: 'reports', label: 'التقارير والتحليلات', icon: BarChart3 },
@@ -93,6 +164,18 @@ export default function Layout({
           {/* Nav Items */}
           <nav className="flex-1 py-6 px-4 space-y-1.5 overflow-y-auto">
             {visibleNavItems.map((item) => {
+              if (item.subItems) {
+                return (
+                  <CollapsibleNavItem
+                    key={item.id}
+                    item={item}
+                    activeTab={activeTab}
+                    onTabChange={onTabChange}
+                    setIsSidebarOpen={setIsSidebarOpen}
+                  />
+                );
+              }
+
               const ItemIcon = item.icon;
               const isActive = item.id === activeTab;
 
@@ -103,7 +186,7 @@ export default function Layout({
                     onTabChange(item.id);
                     setIsSidebarOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition-all duration-155 relative overflow-hidden ${
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition-all duration-155 relative overflow-hidden cursor-pointer ${
                     isActive 
                       ? 'bg-[#86d1ed] text-[#02273b] font-extrabold shadow-sm' 
                       : 'hover:bg-slate-800/40 text-slate-400 hover:text-slate-200'

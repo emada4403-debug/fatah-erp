@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard.jsx';
 import Products from './components/Products.jsx';
 import Pricing from './components/Pricing.jsx';
 import Quotes from './components/Quotes.jsx';
+import QuoteBuilder from './components/QuoteBuilder.jsx';
 import CRM from './components/CRM.jsx';
 import Reports from './components/Reports.jsx';
 import Settings from './components/Settings.jsx';
@@ -21,6 +22,8 @@ export default function App() {
   const [settings, setSettings] = useState({});
   const [priceHistory, setPriceHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [editingQuote, setEditingQuote] = useState(null);
+  const [isAddMode, setIsAddMode] = useState(false);
 
   // Admin Protection State
   const [isAdmin, setIsAdmin] = useState(true);
@@ -115,6 +118,10 @@ export default function App() {
       setPinInput('');
       setPinError(false);
     } else {
+      if (tabId.startsWith('quote_builder_')) {
+        setEditingQuote(null);
+        setIsAddMode(true);
+      }
       setActiveTab(tabId);
       window.location.hash = tabId;
     }
@@ -194,12 +201,49 @@ export default function App() {
         return (
           <Quotes
             quotes={quotes}
+            products={products}
+            settings={settings}
+            onUpdate={syncData}
+            onStartCreate={() => {
+              setEditingQuote(null);
+              setIsAddMode(true);
+              setActiveTab('quote_builder_galvanized');
+              window.location.hash = 'quote_builder_galvanized';
+            }}
+            onStartEdit={(q) => {
+              setEditingQuote(q);
+              setIsAddMode(false);
+              const tab = `quote_builder_${q.productType || 'galvanized'}`;
+              setActiveTab(tab);
+              window.location.hash = tab;
+            }}
+          />
+        );
+      case 'quote_builder_galvanized':
+      case 'quote_builder_black':
+      case 'quote_builder_general': {
+        const type = activeTab.replace('quote_builder_', '');
+        return (
+          <QuoteBuilder
+            quotes={quotes}
             clients={clients}
             products={products}
             settings={settings}
             onUpdate={syncData}
+            editingQuote={editingQuote}
+            setEditingQuote={(q) => {
+              setEditingQuote(q);
+              if (!q) {
+                setActiveTab('quotes');
+                window.location.hash = 'quotes';
+              }
+            }}
+            isAddMode={isAddMode}
+            setIsAddMode={setIsAddMode}
+            defaultProductType={type}
           />
         );
+      }
       case 'crm':
         return (
           <CRM
@@ -247,7 +291,6 @@ export default function App() {
       <Layout
         activeTab={activeTab}
         onTabChange={handleTabChange}
-        settings={settings}
         isAdmin={isAdmin}
         hasPin={!!settings.adminPin}
         onLock={handleLock}
