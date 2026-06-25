@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Search, Plus, Calendar, AlertCircle, Phone, Mail, MapPin, Building, ChevronRight, User, Trash2, Edit, X, Kanban } from 'lucide-react';
 import { DB } from '../db/db.js';
+import { toast } from './Toast.jsx';
+import { confirmModal } from './ConfirmModal.jsx';
 
 export default function CRM({ clients, quotes, deals, onUpdate }) {
   const [activeTab, setActiveTab] = useState('clients'); // clients, pipeline, followups
@@ -105,7 +107,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
   // Save Client
   const handleSaveClient = () => {
     if (!clientName.trim()) {
-      alert('يرجى إدخال اسم العميل');
+      toast.error('يرجى إدخال اسم العميل');
       return;
     }
 
@@ -120,12 +122,14 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
       notes: clientNotes,
     };
 
-    if (isAddClientMode) {
+    if (isAddClientMode || !editingClient || editingClient.id === 'temp') {
       DB.insert('clients', data);
+      toast.success(`🎉 تم إضافة العميل الجديد "${data.name}" بنجاح`);
     } else {
       DB.update('clients', editingClient.id, data);
+      toast.success(`📝 تم تحديث بيانات العميل "${data.name}" بنجاح`);
     }
-
+    
     onUpdate();
     setEditingClient(null);
     if (viewingClient && viewingClient.id === editingClient?.id) {
@@ -134,8 +138,12 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
   };
 
   // Delete Client
-  const handleDeleteClient = (c) => {
-    if (window.confirm(`هل أنت متأكد من حذف العميل "${c.name}"؟`)) {
+  const handleDeleteClient = async (c) => {
+    const confirmed = await confirmModal.show({
+      title: 'حذف العميل',
+      message: `هل أنت متأكد من حذف العميل "${c.name}"؟ سيتم حذف جميع الصفقات والفرص البيعية المرتبطة به ولا يمكن استعادتها.`
+    });
+    if (confirmed) {
       DB.delete('clients', c.id);
       // Delete deals of this client too
       const cDeals = deals.filter(d => d.clientId === c.id);
@@ -143,6 +151,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
 
       onUpdate();
       setViewingClient(null);
+      toast.success(`🗑️ تم حذف العميل "${c.name}" بنجاح`);
     }
   };
 
@@ -173,7 +182,7 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
   // Save Deal
   const handleSaveDeal = () => {
     if (!dealTitle.trim()) {
-      alert('يرجى إدخال عنوان الصفقة');
+      toast.error('يرجى إدخال عنوان الصفقة');
       return;
     }
 
@@ -191,10 +200,12 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
       DB.update('clients', dealClientId, { stage: dealStage });
     }
 
-    if (isAddDealMode) {
-      DB.insert('deals', data);
+    if (isAddDealMode || !editingDeal || editingDeal.id === 'temp') {
+      DB.insert('deals', { ...data, createdAt: new Date().toISOString() });
+      toast.success(`🎉 تم إضافة فرصة البيع "${data.title}" بنجاح`);
     } else {
       DB.update('deals', editingDeal.id, data);
+      toast.success(`📝 تم تحديث بيانات فرصة البيع "${data.title}" بنجاح`);
     }
 
     onUpdate();
@@ -205,11 +216,16 @@ export default function CRM({ clients, quotes, deals, onUpdate }) {
   };
 
   // Delete Deal
-  const handleDeleteDeal = (d) => {
-    if (window.confirm(`هل تريد حذف الصفقة "${d.title}"؟`)) {
+  const handleDeleteDeal = async (d) => {
+    const confirmed = await confirmModal.show({
+      title: 'حذف فرصة البيع',
+      message: `هل أنت متأكد من رغبتك في حذف فرصة البيع "${d.title}"؟ لا يمكن التراجع عن هذا الإجراء.`
+    });
+    if (confirmed) {
       DB.delete('deals', d.id);
       onUpdate();
       setEditingDeal(null);
+      toast.success(`🗑️ تم حذف صفقة "${d.title}" بنجاح`);
     }
   };
 

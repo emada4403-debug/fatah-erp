@@ -10,6 +10,8 @@ import CRM from './components/CRM.jsx';
 import Reports from './components/Reports.jsx';
 import Settings from './components/Settings.jsx';
 import { Lock, X, ShieldAlert } from 'lucide-react';
+import { ToastContainer, toast } from './components/Toast.jsx';
+import { ConfirmModalContainer } from './components/ConfirmModal.jsx';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -47,13 +49,21 @@ export default function App() {
       currency: 'جنيه'
     };
     setSettings(s);
+  };
 
-    // Check PIN session
-    if (s.adminPin) {
-      const sessionUnlocked = sessionStorage.getItem('fatah_erp_is_admin') === 'true';
-      setIsAdmin(sessionUnlocked);
-    } else {
-      setIsAdmin(true); // Unlocked if no pin is set
+  const isSessionValid = (adminPin) => {
+    if (!adminPin) return true;
+    try {
+      const raw = sessionStorage.getItem('fatah_erp_admin_session');
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      const isValid = (Date.now() - data.unlockedAt < 3600000) && (data.pinHash === btoa(adminPin));
+      if (!isValid) {
+        sessionStorage.removeItem('fatah_erp_admin_session');
+      }
+      return isValid;
+    } catch (e) {
+      return false;
     }
   };
 
@@ -64,7 +74,19 @@ export default function App() {
         await DB.syncFromCloud();
       }
       DB.seed();
-      syncData();
+      
+      const s = DB.getAll('settings')[0] || {};
+      setSettings(s);
+      setIsAdmin(isSessionValid(s.adminPin));
+      
+      setProducts(DB.getAll('products'));
+      setMaterials(DB.getAll('raw_materials'));
+      setCategories(DB.getAll('categories'));
+      setQuotes(DB.getAll('quotes'));
+      setClients(DB.getAll('clients'));
+      setDeals(DB.getAll('deals'));
+      setPriceHistory(DB.getAll('price_history'));
+
       setIsLoading(false);
     };
 
@@ -74,7 +96,7 @@ export default function App() {
     const hash = window.location.hash.replace('#', '') || 'dashboard';
     const s = DB.getAll('settings')[0] || {};
     const hasPin = !!s.adminPin;
-    const sessionUnlocked = sessionStorage.getItem('fatah_erp_is_admin') === 'true';
+    const sessionUnlocked = isSessionValid(s.adminPin);
     const isRestricted = ['pricing', 'reports', 'settings'].includes(hash);
 
     if (isRestricted && hasPin && !sessionUnlocked) {
@@ -88,7 +110,7 @@ export default function App() {
     const handleHashChange = () => {
       const h = window.location.hash.replace('#', '') || 'dashboard';
       const currentSettings = DB.getAll('settings')[0] || {};
-      const currentUnlocked = sessionStorage.getItem('fatah_erp_is_admin') === 'true';
+      const currentUnlocked = isSessionValid(currentSettings.adminPin);
       const currentRestricted = ['pricing', 'reports', 'settings'].includes(h);
 
       if (currentRestricted && currentSettings.adminPin && !currentUnlocked) {
@@ -129,10 +151,11 @@ export default function App() {
 
   // Lock Admin Mode
   const handleLock = () => {
-    sessionStorage.setItem('fatah_erp_is_admin', 'false');
+    sessionStorage.removeItem('fatah_erp_admin_session');
     setIsAdmin(false);
     setActiveTab('dashboard');
     window.location.hash = 'dashboard';
+    toast.warn('🔓 تم قفل الإدارة وتأمين الحسابات');
   };
 
   // Open login unlock dialog manually
@@ -147,10 +170,12 @@ export default function App() {
   const handleUnlockSubmit = (e) => {
     if (e) e.preventDefault();
     if (pinInput === settings.adminPin) {
-      sessionStorage.setItem('fatah_erp_is_admin', 'true');
+      const sessionData = { unlockedAt: Date.now(), pinHash: btoa(pinInput) };
+      sessionStorage.setItem('fatah_erp_admin_session', JSON.stringify(sessionData));
       setIsAdmin(true);
       setShowPinModal(false);
       setPinError(false);
+      toast.success('🔒 تم التحقق بنجاح وتفعيل صلاحيات الإدارة');
       if (pendingTab) {
         setActiveTab(pendingTab);
         window.location.hash = pendingTab;
@@ -369,6 +394,8 @@ export default function App() {
           </div>
         </div>
       )}
+      <ToastContainer />
+      <ConfirmModalContainer />
     </div>
   );
 }

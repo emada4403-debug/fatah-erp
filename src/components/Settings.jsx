@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Settings as SettingsIcon, Save, Download, Upload, RefreshCw, Info, AlertTriangle } from 'lucide-react';
 import { DB } from '../db/db.js';
+import { toast } from './Toast.jsx';
+import { confirmModal } from './ConfirmModal.jsx';
 
 export default function Settings({ settings, onUpdate }) {
   const [name, setName] = useState(settings.name || '');
@@ -45,7 +47,7 @@ export default function Settings({ settings, onUpdate }) {
     }
 
     onUpdate();
-    alert('✅ تم حفظ الإعدادات بنجاح');
+    toast.success('✅ تم حفظ الإعدادات بنجاح');
   };
 
   // Export database backup
@@ -78,18 +80,24 @@ export default function Settings({ settings, onUpdate }) {
           DB.save(table, records);
         });
         onUpdate();
-        alert('✅ تم استيراد البيانات الاحتياطية وتحديث النظام بنجاح');
-        window.location.reload();
+        toast.success('✅ تم استيراد البيانات الاحتياطية وتحديث النظام بنجاح');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
       } catch (err) {
-        alert('❌ خطأ: تنسيق الملف غير متوافق أو يحتوي على أخطاء');
+        toast.error('❌ خطأ: تنسيق الملف غير متوافق أو يحتوي على أخطاء');
       }
     };
     reader.readAsText(file);
   };
 
   // Reset database backup
-  const handleResetData = () => {
-    if (window.confirm('⚠️ تحذير: هل أنت متأكد من حذف كافة البيانات الحالية وإعادة تعيين النظام؟ لا يمكن التراجع عن هذا الإجراء!')) {
+  const handleResetData = async () => {
+    const confirmed = await confirmModal.show({
+      title: 'إعادة تعيين النظام',
+      message: 'تحذير: هل أنت متأكد من حذف كافة البيانات الحالية وإعادة تعيين النظام بالكامل؟ لا يمكن التراجع عن هذا الإجراء!'
+    });
+    if (confirmed) {
       const prefix = DB._prefix;
       Object.keys(localStorage)
         .filter(k => k.startsWith(prefix))
@@ -97,8 +105,10 @@ export default function Settings({ settings, onUpdate }) {
 
       DB.seed();
       onUpdate();
-      alert('🔄 تم إعادة تعيين قاعدة البيانات وتهيئة النظام بالبيانات الافتراضية');
-      window.location.reload();
+      toast.success('🔄 تم إعادة تعيين قاعدة البيانات وتهيئة النظام بالبيانات الافتراضية');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     }
   };
 

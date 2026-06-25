@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { CostEngine } from '../db/costEngine.js';
 import { DB } from '../db/db.js';
+import { toast } from './Toast.jsx';
+import { confirmModal } from './ConfirmModal.jsx';
 
 export default function Products({ products, materials, categories, isAdmin, onUpdate }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -259,7 +261,7 @@ export default function Products({ products, materials, categories, isAdmin, onU
   // Save Product
   const handleSave = () => {
     if (!formName.trim()) {
-      alert('يرجى إدخال اسم المنتج');
+      toast.error('يرجى إدخال اسم المنتج');
       return;
     }
 
@@ -344,8 +346,10 @@ export default function Products({ products, materials, categories, isAdmin, onU
 
     if (isAddMode) {
       DB.insert('products', data);
+      toast.success(`🎉 تم إضافة المنتج الجديد "${data.name}" بنجاح`);
     } else {
       DB.update('products', editingProduct.id, data);
+      toast.success(`📝 تم تحديث بيانات المنتج "${data.name}" بنجاح`);
     }
 
     onUpdate();
@@ -353,11 +357,16 @@ export default function Products({ products, materials, categories, isAdmin, onU
   };
 
   // Delete Product
-  const handleDelete = (p) => {
+  const handleDelete = async (p) => {
     if (!isAdmin) return;
-    if (window.confirm(`هل أنت متأكد من حذف المنتج "${p.name}"؟`)) {
+    const confirmed = await confirmModal.show({
+      title: 'حذف المنتج',
+      message: `هل أنت متأكد من رغبتك في حذف المنتج "${p.name}"؟ سيتم حذفه من قاعدة البيانات نهائياً.`
+    });
+    if (confirmed) {
       DB.delete('products', p.id);
       onUpdate();
+      toast.success(`🗑️ تم حذف المنتج "${p.name}" بنجاح`);
     }
   };
 
@@ -1262,7 +1271,7 @@ export default function Products({ products, materials, categories, isAdmin, onU
                                 const file = e.target.files[0];
                                 if (file) {
                                   if (file.size > 1024 * 1024) {
-                                    alert('حجم الصورة كبير جداً! يرجى اختيار صورة أقل من 1 ميجابايت.');
+                                    toast.error('حجم الصورة كبير جداً! يرجى اختيار صورة أقل من 1 ميجابايت.');
                                     return;
                                   }
                                   const reader = new FileReader();

@@ -35,13 +35,14 @@ export const DB = {
     localStorage.setItem(this._key(table), JSON.stringify(records));
     if (isSupabaseConfigured) {
       try {
-        // Delete all rows in Supabase table
-        await supabase.from(table).delete().neq('id', 'placeholder_delete_all');
         if (records && records.length > 0) {
-          await supabase.from(table).insert(records);
+          const { error } = await supabase.from(table).upsert(records);
+          if (error) {
+            console.error(`DB.save Cloud Sync Upsert Error (${table}):`, error);
+          }
         }
       } catch (e) {
-        console.error(`DB.save Cloud Sync Error (${table}):`, e);
+        console.error(`DB.save Cloud Sync Exception (${table}):`, e);
       }
     }
   },
@@ -111,6 +112,9 @@ export const DB = {
   },
 
   _genId() {
+    if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
     return Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
   },
 

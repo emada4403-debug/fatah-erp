@@ -48,6 +48,8 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
   const [formDiscountPct, setFormDiscountPct] = useState(0);
   const [formTaxPct, setFormTaxPct] = useState(14);
   const [formProductType, setFormProductType] = useState('galvanized');
+  const [activeBuilderTab, setActiveBuilderTab] = useState('client'); // client, items, extras, terms
+  const [expandedItemId, setExpandedItemId] = useState(null);
   
   // Grouped items state
   // formItems is an array of: { id, productId, productName, itemTitle, itemDesc, qty, unitPrice, discountPct, techNotes, unitType, subsection }
@@ -776,285 +778,377 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT COLUMN: INTERACTIVE BUILDER FORM (5/12 width) */}
-        <div className="lg:col-span-5 space-y-6 max-h-[80vh] overflow-y-auto pr-1">
+        <div className="lg:col-span-5 space-y-4 max-h-[80vh] overflow-y-auto pr-1">
 
-
-          {/* 2. Client Details */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-xs space-y-4">
-            <h3 className="text-xs font-black text-slate-700 flex items-center gap-1.5"><ChevronRight className="w-4 h-4 text-[#006780]"/>تفاصيل العميل وعرض السعر</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="sm:col-span-2">
-                <label className="block text-[9px] font-bold text-slate-400 mb-1 uppercase tracking-wide">العميل في الـ CRM</label>
-                <select value={formClientId} onChange={e=>handleClientSelect(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50">
-                  <option value="">— اختر العميل لملء البيانات تلقائياً —</option>
-                  {clients.map(c=><option key={c.id} value={c.id}>{c.name} — {c.company||'فردي'}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[9px] font-bold text-slate-400 mb-1 uppercase tracking-wide">اسم الشركة / العميل</label>
-                <input type="text" value={formClientName} onChange={e=>setFormClientName(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50" placeholder="شركة الإنشاءات..."/>
-              </div>
-              <div>
-                <label className="block text-[9px] font-bold text-slate-400 mb-1 uppercase tracking-wide">جهة الاتصال / المهندس المسؤول</label>
-                <input type="text" value={formClientContact} onChange={e=>setFormClientContact(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50" placeholder="م/ أحمد..."/>
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-[9px] font-bold text-slate-400 mb-1 uppercase tracking-wide">اسم المشروع</label>
-                <input type="text" value={formProjectName} onChange={e=>setFormProjectName(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50" placeholder="مشروع SPEED COOL..."/>
-              </div>
-              <div>
-                <label className="block text-[9px] font-bold text-slate-400 mb-1 uppercase tracking-wide">تاريخ العرض</label>
-                <input type="date" value={formDate} onChange={e=>setFormDate(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50"/>
-              </div>
-              <div>
-                <label className="block text-[9px] font-bold text-slate-400 mb-1 uppercase tracking-wide">صالح حتى</label>
-                <input type="date" value={formValidUntil} onChange={e=>setFormValidUntil(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50"/>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Items and Subsections Builder */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="text-xs font-black text-slate-700 flex items-center gap-1.5"><ChevronRight className="w-4 h-4 text-[#006780]"/>I. جدول بنود الصاج المجلفن والأسود</h3>
-            </div>
-            
-            {/* Loop through each subsection group */}
-            {uniqueSubsections.map(subSecName => {
-              const subSecItems = formItems.filter(it => it.subsection === subSecName);
-              return (
-                <div key={subSecName} className="border border-slate-100 rounded-2xl p-4 bg-slate-50/50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <input 
-                      type="text" 
-                      value={subSecName} 
-                      onChange={e => {
-                        const newName = e.target.value;
-                        const updated = formItems.map(it => it.subsection === subSecName ? { ...it, subsection: newName } : it);
-                        setFormItems(updated);
-                      }}
-                      className="font-bold text-xs text-[#02273b] bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#006780] focus:outline-none px-1"
-                    />
-                    <button type="button" onClick={() => handleAddItem(subSecName)} className="text-[10px] font-bold text-[#006780] hover:text-[#02273b] flex items-center gap-0.5 px-2 py-1 rounded bg-[#006780]/5 cursor-pointer">
-                      <Plus className="w-3 h-3"/>إضافة بند صاج مجلفن
-                    </button>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    {subSecItems.map((item, idx) => {
-                      const img = products.find(p => p.id === item.productId)?.image || item.image || '';
-                      return (
-                        <div key={item.id} className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs p-3 space-y-3">
-                          <div className="flex justify-between items-center text-[10px] font-bold text-slate-400">
-                            <span>بند فرعي #{idx+1}</span>
-                            <button type="button" onClick={() => handleRemoveItem(item.id)} className="text-rose-500 hover:text-rose-700 cursor-pointer">
-                              <Trash2 className="w-3.5 h-3.5"/>
-                            </button>
-                          </div>
-                          {img && (
-                            <div className="h-20 w-full overflow-hidden rounded bg-slate-50 flex items-center justify-center border border-slate-100 mb-2">
-                              <img src={img} alt="" className="h-full object-contain" style={{mixBlendMode: 'multiply'}}/>
-                            </div>
-                          )}
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <div className="sm:col-span-3">
-                              <label className="block text-[9px] text-slate-400 font-bold mb-0.5">استيراد منتج مسجل (اختياري للتعبئة التلقائية)</label>
-                              <select value={item.productId || ''} onChange={e => handleItemChange(item.id, 'productId', e.target.value)} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white">
-                                <option value="">-- أدخل البيانات يدوياً / اختر منتجاً للاستيراد --</option>
-                                {products.filter(p => p.active !== false).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                              </select>
-                            </div>
-                            <div className="sm:col-span-2">
-                              <label className="block text-[9px] text-slate-400 font-bold mb-0.5">اسم البند / المنتج</label>
-                              <input type="text" value={item.productName || ''} onChange={e => handleItemChange(item.id, 'productName', e.target.value)} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" placeholder="مثال: دكت صاج مجلفن..."/>
-                            </div>
-                            <div>
-                              <label className="block text-[9px] text-slate-400 font-bold mb-0.5">الوحدة</label>
-                              <input type="text" value={item.unitType || ''} onChange={e => handleItemChange(item.id, 'unitType', e.target.value)} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" placeholder="م²، طن، كجم..."/>
-                            </div>
-                            <div>
-                              <label className="block text-[9px] text-slate-400 font-bold mb-0.5">الكمية</label>
-                              <input type="number" value={item.qty || ''} onChange={e => handleItemChange(item.id, 'qty', parseFloat(e.target.value) || 0)} className="w-full px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" min="0" step="0.001"/>
-                            </div>
-                            <div>
-                              <label className="block text-[9px] text-slate-400 font-bold mb-0.5">سعر الوحدة (جنيه)</label>
-                              <input type="number" value={item.unitPrice || ''} onChange={e => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)} className="w-full px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" min="0" step="0.01"/>
-                            </div>
-                            <div>
-                              <label className="block text-[9px] text-slate-400 font-bold mb-0.5">الخصم (%)</label>
-                              <input type="number" value={item.discountPct || ''} onChange={e => handleItemChange(item.id, 'discountPct', parseFloat(e.target.value) || 0)} className="w-full px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" min="0" max="100"/>
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-[9px] text-slate-400 font-bold mb-0.5">عنوان البند في المستند</label>
-                            <input type="text" value={item.itemTitle || ''} onChange={e => handleItemChange(item.id, 'itemTitle', e.target.value)} className="w-full px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" placeholder="RECTANGULAR GALVANIZED SHEET DUCTS"/>
-                          </div>
-                          <div>
-                            <label className="block text-[9px] text-slate-400 font-bold mb-0.5">الوصف التفصيلي</label>
-                            <input type="text" value={item.itemDesc || ''} onChange={e => handleItemChange(item.id, 'itemDesc', e.target.value)} className="w-full px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]"/>
-                          </div>
-                          <div>
-                            <label className="block text-[9px] text-slate-400 font-bold mb-0.5">ملاحظات فنية ف التقديم</label>
-                            <textarea value={item.techNotes || ''} onChange={e => handleItemChange(item.id, 'techNotes', e.target.value)} className="w-full px-2 py-1 rounded border border-slate-200 text-[10px] focus:outline-none focus:ring-1 focus:ring-[#006780] font-mono" rows="3"/>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-
-            <button type="button" onClick={() => {
-              // Add new subsection group with a temporary name
-              const num = uniqueSubsections.length + 1;
-              handleAddItem(`قسم فرعي جديد #${num}`);
-            }} className="w-full py-2.5 rounded-xl border-2 border-dashed border-slate-200 hover:border-slate-350 text-slate-500 hover:text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer bg-white">
-              <PlusCircle className="w-4 h-4"/>إضافة قسم فرعي جديد
+          {/* Tab Navigation Header */}
+          <div className="flex border border-slate-200/60 mb-2 bg-slate-100 p-1 rounded-xl gap-1">
+            <button 
+              type="button"
+              onClick={() => setActiveBuilderTab('client')}
+              className={`flex-grow py-2 text-center rounded-lg text-[11px] font-bold transition-all cursor-pointer ${activeBuilderTab === 'client' ? 'bg-[#006780] text-white shadow-xs' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+            >
+              👤 العميل
+            </button>
+            <button 
+              type="button"
+              onClick={() => {
+                setActiveBuilderTab('items');
+                if (formItems.length > 0 && !expandedItemId) {
+                  setExpandedItemId(formItems[0].id);
+                }
+              }}
+              className={`flex-grow py-2 text-center rounded-lg text-[11px] font-bold transition-all cursor-pointer ${activeBuilderTab === 'items' ? 'bg-[#006780] text-white shadow-xs' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+            >
+              📦 البنود ({formItems.length})
+            </button>
+            <button 
+              type="button"
+              onClick={() => setActiveBuilderTab('extras')}
+              className={`flex-grow py-2 text-center rounded-lg text-[11px] font-bold transition-all cursor-pointer ${activeBuilderTab === 'extras' ? 'bg-[#006780] text-white shadow-xs' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+            >
+              🔩 الإضافات
+            </button>
+            <button 
+              type="button"
+              onClick={() => setActiveBuilderTab('terms')}
+              className={`flex-grow py-2 text-center rounded-lg text-[11px] font-bold transition-all cursor-pointer ${activeBuilderTab === 'terms' ? 'bg-[#006780] text-white shadow-xs' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+            >
+              💳 الشروط
             </button>
           </div>
 
-          {/* 4. Accessories Picker */}
-          <div className={`bg-white rounded-2xl p-5 border shadow-xs space-y-4 transition-all ${accLocked?'bg-amber-50/20 border-amber-200':'border-slate-100'}`}>
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-              <h3 className="text-xs font-black text-slate-700 flex items-center gap-1.5"><ChevronRight className="w-4 h-4 text-[#006780]"/>II. إكسسوارات ومكونات الفلنجة والزوايا</h3>
-              <button type="button" onClick={()=>setAccLocked(!accLocked)} className={`flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded ${accLocked?'bg-amber-100 text-amber-700':'bg-slate-100 text-slate-500'}`}>
-                {accLocked ? <Lock className="w-2.5 h-2.5"/> : <Unlock className="w-2.5 h-2.5"/>}
-                {accLocked ? 'LOCKED' : 'UNLOCKED'}
-              </button>
-            </div>
-            
-            {!accLocked && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-400 mb-1.5 uppercase">اختر منتجاً لإضافته إلى جدول المكونات:</label>
-                  <select 
-                    value="" 
-                    onChange={e => {
-                      const prodId = e.target.value;
-                      if (!prodId) return;
-                      const prod = products.find(p => p.id === prodId);
-                      if (prod) handleAddAccessory(prod);
-                    }}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50"
-                  >
-                    <option value="">— اختر منتجاً من المنتجات المتاحة لإضافته —</option>
-                    {products
-                      .filter(p => p.active !== false && p.categoryId !== 'cat_galvanized' && p.categoryId !== 'cat_black' && !formAccessories.some(a => a.productId === p.id))
-                      .map(p => {
-                        const price = CostEngine.calculate(p)?.finalPrice || p.priceOverride || 0;
-                        return (
-                          <option key={p.id} value={p.id}>
-                            {p.name} (${price.toFixed(2)})
-                          </option>
-                        );
-                      })
-                    }
+          {/* 2. Client Details */}
+          {activeBuilderTab === 'client' && (
+            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-xs space-y-4">
+              <h3 className="text-xs font-black text-slate-700 flex items-center gap-1.5"><ChevronRight className="w-4 h-4 text-[#006780]"/>تفاصيل العميل وعرض السعر</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block text-[9px] font-bold text-slate-400 mb-1 uppercase tracking-wide">العميل في الـ CRM</label>
+                  <select value={formClientId} onChange={e=>handleClientSelect(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50">
+                    <option value="">— اختر العميل لملء البيانات تلقائياً —</option>
+                    {clients.map(c=><option key={c.id} value={c.id}>{c.name} — {c.company||'فردي'}</option>)}
                   </select>
                 </div>
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-400 mb-1 uppercase tracking-wide">اسم الشركة / العميل</label>
+                  <input type="text" value={formClientName} onChange={e=>setFormClientName(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50" placeholder="شركة الإنشاءات..."/>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-400 mb-1 uppercase tracking-wide">جهة الاتصال / المهندس المسؤول</label>
+                  <input type="text" value={formClientContact} onChange={e=>setFormClientContact(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50" placeholder="م/ أحمد..."/>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-[9px] font-bold text-slate-400 mb-1 uppercase tracking-wide">اسم المشروع</label>
+                  <input type="text" value={formProjectName} onChange={e=>setFormProjectName(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50" placeholder="مشروع SPEED COOL..."/>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-400 mb-1 uppercase tracking-wide">تاريخ العرض</label>
+                  <input type="date" value={formDate} onChange={e=>setFormDate(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50"/>
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-400 mb-1 uppercase tracking-wide">صالح حتى</label>
+                  <input type="date" value={formValidUntil} onChange={e=>setFormValidUntil(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50"/>
+                </div>
+              </div>
+            </div>
+          )}
 
-                {formAccessories.length > 0 && (
-                  <div className="space-y-2 pt-2 border-t border-slate-100">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase">بيانات وتكلفة القطع المختارة:</p>
-                    {formAccessories.map((acc, idx) => (
-                      <div key={acc.productId} className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
-                        <div className="flex justify-between text-xs font-bold text-slate-700">
-                          <span>{acc.name}</span>
-                          <button type="button" onClick={()=>handleRemoveAccessory(acc.productId)} className="text-rose-500 hover:text-rose-700 cursor-pointer">
-                            <Trash2 className="w-3.5 h-3.5"/>
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-[8px] text-slate-400 font-bold mb-0.5">الوحدة</label>
-                            <input type="text" value={acc.unitLabel||''} onChange={e=>handleAccChange(idx,'unitLabel',e.target.value)} className="w-full px-2 py-0.5 rounded border border-slate-200 text-xs bg-white focus:outline-none"/>
+          {/* 3. Items and Subsections Builder */}
+          {activeBuilderTab === 'items' && (
+            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 className="text-xs font-black text-slate-700 flex items-center gap-1.5"><ChevronRight className="w-4 h-4 text-[#006780]"/>I. جدول بنود الصاج المجلفن والأسود</h3>
+              </div>
+              
+              {/* Loop through each subsection group */}
+              {uniqueSubsections.map(subSecName => {
+                const subSecItems = formItems.filter(it => it.subsection === subSecName);
+                return (
+                  <div key={subSecName} className="border border-slate-100 rounded-2xl p-4 bg-slate-50/50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <input 
+                        type="text" 
+                        value={subSecName} 
+                        onChange={e => {
+                          const newName = e.target.value;
+                          const updated = formItems.map(it => it.subsection === subSecName ? { ...it, subsection: newName } : it);
+                          setFormItems(updated);
+                        }}
+                        className="font-bold text-xs text-[#02273b] bg-transparent border-b border-transparent hover:border-slate-300 focus:border-[#006780] focus:outline-none px-1"
+                      />
+                      <button type="button" onClick={() => handleAddItem(subSecName)} className="text-[10px] font-bold text-[#006780] hover:text-[#02273b] flex items-center gap-0.5 px-2 py-1 rounded bg-[#006780]/5 cursor-pointer">
+                        <Plus className="w-3 h-3"/>إضافة بند صاج مجلفن
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {subSecItems.map((item, idx) => {
+                        const img = products.find(p => p.id === item.productId)?.image || item.image || '';
+                        const isExpanded = expandedItemId === item.id;
+                        const subtotal = (item.qty || 0) * (item.unitPrice || 0);
+                        const discAmt = subtotal * ((item.discountPct || 0) / 100);
+                        const total = subtotal - discAmt;
+                        
+                        return (
+                          <div key={item.id} className={`bg-white rounded-xl border transition-all ${isExpanded ? 'border-[#006780] ring-1 ring-[#006780]/20 shadow-xs' : 'border-slate-200 hover:border-slate-300 shadow-xs'}`}>
+                            
+                            {/* Collapsed Header (Always Visible) */}
+                            <div 
+                              onClick={() => setExpandedItemId(isExpanded ? null : item.id)}
+                              className="p-3 flex items-center justify-between cursor-pointer select-none gap-3"
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500">
+                                  {idx + 1}
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="text-xs font-bold text-[#02273b] truncate uppercase">
+                                    {item.productName || item.itemTitle || 'بند جديد بدون اسم'}
+                                  </p>
+                                  <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                    {item.qty || 0} {item.unitType || 'طن'} × {fmtEN(item.unitPrice)} جنيه
+                                  </p>
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-[#006780] bg-[#006780]/5 px-2 py-0.5 rounded-lg">
+                                  {fmtEN(total)} ج.م
+                                </span>
+                                <button 
+                                  type="button" 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveItem(item.id);
+                                  }} 
+                                  className="p-1 hover:bg-rose-50 rounded-lg text-rose-500 hover:text-rose-700 transition-colors cursor-pointer"
+                                  title="حذف البند"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5"/>
+                                </button>
+                                <div className={`text-slate-400 transition-transform ${isExpanded ? 'rotate-90 text-[#006780]' : ''}`}>
+                                  <ChevronRight className="w-4 h-4" />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Expanded Form Fields */}
+                            {isExpanded && (
+                              <div className="px-4 pb-4 pt-1 border-t border-slate-100 space-y-3 bg-slate-50/20">
+                                {img && (
+                                  <div className="h-20 w-full overflow-hidden rounded bg-slate-50 flex items-center justify-center border border-slate-100 mb-2">
+                                    <img src={img} alt="" className="h-full object-contain" style={{mixBlendMode: 'multiply'}}/>
+                                  </div>
+                                )}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                  <div className="sm:col-span-3">
+                                    <label className="block text-[9px] text-slate-400 font-bold mb-1 uppercase">استيراد منتج مسجل (اختياري للتعبئة التلقائية)</label>
+                                    <select value={item.productId || ''} onChange={e => handleItemChange(item.id, 'productId', e.target.value)} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white">
+                                      <option value="">-- أدخل البيانات يدوياً / اختر منتجاً للاستيراد --</option>
+                                      {products.filter(p => p.active !== false).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                    </select>
+                                  </div>
+                                  <div className="sm:col-span-2">
+                                    <label className="block text-[9px] text-slate-400 font-bold mb-1">اسم البند / المنتج</label>
+                                    <input type="text" value={item.productName || ''} onChange={e => handleItemChange(item.id, 'productName', e.target.value)} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" placeholder="مثال: دكت صاج مجلفن..."/>
+                                  </div>
+                                  <div>
+                                    <label className="block text-[9px] text-slate-400 font-bold mb-1">الوحدة</label>
+                                    <input type="text" value={item.unitType || ''} onChange={e => handleItemChange(item.id, 'unitType', e.target.value)} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" placeholder="م²، طن، كجم..."/>
+                                  </div>
+                                  <div>
+                                    <label className="block text-[9px] text-slate-400 font-bold mb-1">الكمية</label>
+                                    <input type="number" value={item.qty || ''} onChange={e => handleItemChange(item.id, 'qty', parseFloat(e.target.value) || 0)} className="w-full px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" min="0" step="0.001"/>
+                                  </div>
+                                  <div>
+                                    <label className="block text-[9px] text-slate-400 font-bold mb-1">سعر الوحدة (جنيه)</label>
+                                    <input type="number" value={item.unitPrice || ''} onChange={e => handleItemChange(item.id, 'unitPrice', parseFloat(e.target.value) || 0)} className="w-full px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" min="0" step="0.01"/>
+                                  </div>
+                                  <div>
+                                    <label className="block text-[9px] text-slate-400 font-bold mb-1">الخصم (%)</label>
+                                    <input type="number" value={item.discountPct || ''} onChange={e => handleItemChange(item.id, 'discountPct', parseFloat(e.target.value) || 0)} className="w-full px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" min="0" max="100"/>
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-[9px] text-slate-400 font-bold mb-1">عنوان البند في المستند</label>
+                                  <input type="text" value={item.itemTitle || ''} onChange={e => handleItemChange(item.id, 'itemTitle', e.target.value)} className="w-full px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" placeholder="RECTANGULAR GALVANIZED SHEET DUCTS"/>
+                                </div>
+                                <div>
+                                  <label className="block text-[9px] text-slate-400 font-bold mb-1">الوصف التفصيلي</label>
+                                  <input type="text" value={item.itemDesc || ''} onChange={e => handleItemChange(item.id, 'itemDesc', e.target.value)} className="w-full px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]"/>
+                                </div>
+                                <div>
+                                  <label className="block text-[9px] text-slate-400 font-bold mb-1">ملاحظات فنية ف التقديم</label>
+                                  <textarea value={item.techNotes || ''} onChange={e => handleItemChange(item.id, 'techNotes', e.target.value)} className="w-full px-2 py-1 rounded border border-slate-200 text-[10px] focus:outline-none focus:ring-1 focus:ring-[#006780] font-mono" rows="3"/>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div>
-                            <label className="block text-[8px] text-slate-400 font-bold mb-0.5">سعر الوحدة ($)</label>
-                            <input type="number" value={acc.unitPrice||''} onChange={e=>handleAccChange(idx,'unitPrice',parseFloat(e.target.value)||0)} className="w-full px-2 py-0.5 rounded border border-slate-200 text-xs bg-white focus:outline-none" min="0" step="0.01"/>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+
+              <button type="button" onClick={() => {
+                // Add new subsection group with a temporary name
+                const num = uniqueSubsections.length + 1;
+                handleAddItem(`قسم فرعي جديد #${num}`);
+              }} className="w-full py-2.5 rounded-xl border-2 border-dashed border-slate-200 hover:border-slate-350 text-slate-500 hover:text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer bg-white">
+                <PlusCircle className="w-4 h-4"/>إضافة قسم فرعي جديد
+              </button>
+            </div>
+          )}
+
+          {/* 4. Accessories Picker & Supplements Workmanship */}
+          {activeBuilderTab === 'extras' && (
+            <>
+              {/* 4. Accessories Picker */}
+              <div className={`bg-white rounded-2xl p-5 border shadow-xs space-y-4 transition-all ${accLocked?'bg-amber-50/20 border-amber-200':'border-slate-100'}`}>
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <h3 className="text-xs font-black text-slate-700 flex items-center gap-1.5"><ChevronRight className="w-4 h-4 text-[#006780]"/>II. إكسسوارات ومكونات الفلنجة والزوايا</h3>
+                  <button type="button" onClick={()=>setAccLocked(!accLocked)} className={`flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded ${accLocked?'bg-amber-100 text-amber-700':'bg-slate-100 text-slate-500'}`}>
+                    {accLocked ? <Lock className="w-2.5 h-2.5"/> : <Unlock className="w-2.5 h-2.5"/>}
+                    {accLocked ? 'LOCKED' : 'UNLOCKED'}
+                  </button>
+                </div>
+                
+                {!accLocked && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[9px] font-bold text-slate-400 mb-1.5 uppercase">اختر منتجاً لإضافته إلى جدول المكونات:</label>
+                      <select 
+                        value="" 
+                        onChange={e => {
+                          const prodId = e.target.value;
+                          if (!prodId) return;
+                          const prod = products.find(p => p.id === prodId);
+                          if (prod) handleAddAccessory(prod);
+                        }}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50"
+                      >
+                        <option value="">— اختر منتجاً من المنتجات المتاحة لإضافته —</option>
+                        {products
+                          .filter(p => p.active !== false && p.categoryId !== 'cat_galvanized' && p.categoryId !== 'cat_black' && !formAccessories.some(a => a.productId === p.id))
+                          .map(p => {
+                            const price = CostEngine.calculate(p)?.finalPrice || p.priceOverride || 0;
+                            return (
+                              <option key={p.id} value={p.id}>
+                                {p.name} (${price.toFixed(2)})
+                              </option>
+                            );
+                          })
+                        }
+                      </select>
+                    </div>
+
+                    {formAccessories.length > 0 && (
+                      <div className="space-y-2 pt-2 border-t border-slate-100">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase">بيانات وتكلفة القطع المختارة:</p>
+                        {formAccessories.map((acc, idx) => (
+                          <div key={acc.productId} className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
+                            <div className="flex justify-between text-xs font-bold text-slate-700">
+                              <span>{acc.name}</span>
+                              <button type="button" onClick={()=>handleRemoveAccessory(acc.productId)} className="text-rose-500 hover:text-rose-700 cursor-pointer">
+                                <Trash2 className="w-3.5 h-3.5"/>
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[8px] text-slate-400 font-bold mb-0.5">الوحدة</label>
+                                <input type="text" value={acc.unitLabel||''} onChange={e=>handleAccChange(idx,'unitLabel',e.target.value)} className="w-full px-2 py-0.5 rounded border border-slate-200 text-xs bg-white focus:outline-none"/>
+                              </div>
+                              <div>
+                                <label className="block text-[8px] text-slate-400 font-bold mb-0.5">سعر الوحدة ($)</label>
+                                <input type="number" value={acc.unitPrice||''} onChange={e=>handleAccChange(idx,'unitPrice',parseFloat(e.target.value)||0)} className="w-full px-2 py-0.5 rounded border border-slate-200 text-xs bg-white focus:outline-none" min="0" step="0.01"/>
+                              </div>
+                              <div className="col-span-2">
+                                <label className="block text-[8px] text-slate-400 font-bold mb-0.5">الوصف التفصيلي</label>
+                                <input type="text" value={acc.description||''} onChange={e=>handleAccChange(idx,'description',e.target.value)} className="w-full px-2 py-0.5 rounded border border-slate-200 text-xs bg-white focus:outline-none"/>
+                              </div>
+                            </div>
                           </div>
-                          <div className="col-span-2">
-                            <label className="block text-[8px] text-slate-400 font-bold mb-0.5">الوصف التفصيلي</label>
-                            <input type="text" value={acc.description||''} onChange={e=>handleAccChange(idx,'description',e.target.value)} className="w-full px-2 py-0.5 rounded border border-slate-200 text-xs bg-white focus:outline-none"/>
-                          </div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
               </div>
-            )}
-          </div>
 
-          {/* 5. Supplements Workmanship (Section III) */}
-          <div className={`bg-white rounded-2xl p-5 border shadow-xs space-y-4 transition-all ${suppLocked?'bg-amber-50/20 border-amber-200':'border-slate-100'}`}>
-            <div className="flex items-center justify-between border-b border-slate-200 pb-2">
-              <h3 className="text-xs font-black text-slate-700 flex items-center gap-1.5"><ChevronRight className="w-4 h-4 text-[#006780]"/>III. التشغيلات الإضافية وسير العمل</h3>
-              <button type="button" onClick={()=>setSuppLocked(!suppLocked)} className={`flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded ${suppLocked?'bg-amber-100 text-amber-700':'bg-slate-100 text-slate-500'}`}>
-                {suppLocked ? <Lock className="w-2.5 h-2.5"/> : <Unlock className="w-2.5 h-2.5"/>}
-                {suppLocked ? 'LOCKED' : 'UNLOCKED'}
-              </button>
-            </div>
-            
-            {!suppLocked && (
-              <div className="space-y-4">
-                {/* Assembly Workmanship */}
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <p className="text-[10px] font-black text-slate-600">مصنعيات التجميع والقص الدائري</p>
-                    <button type="button" onClick={addWkRow} className="text-[9px] font-bold text-[#006780] hover:text-[#02273b] cursor-pointer">+ إضافة بند</button>
-                  </div>
-                  {formWorkmanship.map(r => (
-                    <div key={r.id} className="flex gap-2 items-center">
-                      <input type="text" value={r.desc} onChange={e=>changeWk(r.id,'desc',e.target.value)} placeholder="وصف المصنعية..." className="flex-grow px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none"/>
-                      <input type="number" value={r.price} onChange={e=>changeWk(r.id,'price',e.target.value)} placeholder="0.00" className="w-20 px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none text-right" step="0.01"/>
-                      <button type="button" onClick={()=>removeWkRow(r.id)} className="text-rose-500 hover:text-rose-700 cursor-pointer"><X className="w-4 h-4"/></button>
-                    </div>
-                  ))}
+              {/* 5. Supplements Workmanship (Section III) */}
+              <div className={`bg-white rounded-2xl p-5 border shadow-xs space-y-4 transition-all ${suppLocked?'bg-amber-50/20 border-amber-200':'border-slate-100'}`}>
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <h3 className="text-xs font-black text-slate-700 flex items-center gap-1.5"><ChevronRight className="w-4 h-4 text-[#006780]"/>III. التشغيلات الإضافية وسير العمل</h3>
+                  <button type="button" onClick={()=>setSuppLocked(!suppLocked)} className={`flex items-center gap-1 text-[9px] font-bold px-2 py-1 rounded ${suppLocked?'bg-amber-100 text-amber-700':'bg-slate-100 text-slate-500'}`}>
+                    {suppLocked ? <Lock className="w-2.5 h-2.5"/> : <Unlock className="w-2.5 h-2.5"/>}
+                    {suppLocked ? 'LOCKED' : 'UNLOCKED'}
+                  </button>
                 </div>
+                
+                {!suppLocked && (
+                  <div className="space-y-4">
+                    {/* Assembly Workmanship */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <p className="text-[10px] font-black text-slate-600">مصنعيات التجميع والقص الدائري</p>
+                        <button type="button" onClick={addWkRow} className="text-[9px] font-bold text-[#006780] hover:text-[#02273b] cursor-pointer">+ إضافة بند</button>
+                      </div>
+                      {formWorkmanship.map(r => (
+                        <div key={r.id} className="flex gap-2 items-center">
+                          <input type="text" value={r.desc} onChange={e=>changeWk(r.id,'desc',e.target.value)} placeholder="وصف المصنعية..." className="flex-grow px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none"/>
+                          <input type="number" value={r.price} onChange={e=>changeWk(r.id,'price',e.target.value)} placeholder="0.00" className="w-20 px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none text-right" step="0.01"/>
+                          <button type="button" onClick={()=>removeWkRow(r.id)} className="text-rose-500 hover:text-rose-700 cursor-pointer"><X className="w-4 h-4"/></button>
+                        </div>
+                      ))}
+                    </div>
 
-                {/* Transformation Surcharges */}
-                <div className="space-y-2 pt-2 border-t border-slate-100">
-                  <div className="flex justify-between items-center">
-                    <p className="text-[10px] font-black text-slate-600">تعديلات التحويلات والمساليب</p>
-                    <button type="button" onClick={addTrRow} className="text-[9px] font-bold text-[#006780] hover:text-[#02273b] cursor-pointer">+ إضافة بند</button>
-                  </div>
-                  {formTransformation.map(r => (
-                    <div key={r.id} className="flex gap-2 items-center">
-                      <input type="text" value={r.desc} onChange={e=>changeTr(r.id,'desc',e.target.value)} placeholder="وصف التعديل الفني..." className="flex-grow px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none"/>
-                      <input type="number" value={r.price} onChange={e=>changeTr(r.id,'price',e.target.value)} placeholder="0.00" className="w-20 px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none text-right" step="0.01"/>
-                      <button type="button" onClick={()=>removeTrRow(r.id)} className="text-rose-500 hover:text-rose-700 cursor-pointer"><X className="w-4 h-4"/></button>
+                    {/* Transformation Surcharges */}
+                    <div className="space-y-2 pt-2 border-t border-slate-100">
+                      <div className="flex justify-between items-center">
+                        <p className="text-[10px] font-black text-slate-600">تعديلات التحويلات والمساليب</p>
+                        <button type="button" onClick={addTrRow} className="text-[9px] font-bold text-[#006780] hover:text-[#02273b] cursor-pointer">+ إضافة بند</button>
+                      </div>
+                      {formTransformation.map(r => (
+                        <div key={r.id} className="flex gap-2 items-center">
+                          <input type="text" value={r.desc} onChange={e=>changeTr(r.id,'desc',e.target.value)} placeholder="وصف التعديل الفني..." className="flex-grow px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none"/>
+                          <input type="number" value={r.price} onChange={e=>changeTr(r.id,'price',e.target.value)} placeholder="0.00" className="w-20 px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none text-right" step="0.01"/>
+                          <button type="button" onClick={()=>removeTrRow(r.id)} className="text-rose-500 hover:text-rose-700 cursor-pointer"><X className="w-4 h-4"/></button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
 
           {/* 6. Commercial Terms (Section IV) */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-xs space-y-4">
-            <h3 className="text-xs font-black text-slate-700 flex items-center gap-1.5"><ChevronRight className="w-4 h-4 text-[#006780]"/>IV. الشروط التجارية والمالية</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-[9px] text-slate-400 font-bold mb-1 uppercase">طريقة وهيكلة الدفع</label>
-                <textarea value={formPaymentTerms} onChange={e=>setFormPaymentTerms(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-slate-50/50" rows="2"/>
-              </div>
-              <div>
-                <label className="block text-[9px] text-slate-400 font-bold mb-1 uppercase">مدة التسليم (أيام عمل)</label>
-                <input type="text" value={formDeliveryDays} onChange={e=>setFormDeliveryDays(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-slate-50/50" placeholder="14-21"/>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+          {activeBuilderTab === 'terms' && (
+            <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-xs space-y-4">
+              <h3 className="text-xs font-black text-slate-700 flex items-center gap-1.5"><ChevronRight className="w-4 h-4 text-[#006780]"/>IV. الشروط التجارية والمالية</h3>
+              <div className="space-y-3">
                 <div>
-                  <label className="block text-[9px] text-slate-400 font-bold mb-1 uppercase">نسبة الخصم الإجمالي (%)</label>
-                  <input type="number" value={formDiscountPct} onChange={e=>setFormDiscountPct(parseFloat(e.target.value)||0)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-slate-50/50" min="0" max="100"/>
+                  <label className="block text-[9px] text-slate-400 font-bold mb-1 uppercase">طريقة وهيكلة الدفع</label>
+                  <textarea value={formPaymentTerms} onChange={e=>setFormPaymentTerms(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-slate-50/50" rows="2"/>
                 </div>
                 <div>
-                  <label className="block text-[9px] text-slate-400 font-bold mb-1 uppercase">ضريبة القيمة المضافة (%)</label>
-                  <input type="number" value={formTaxPct} onChange={e=>setFormTaxPct(parseFloat(e.target.value)||0)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-slate-50/50" min="0"/>
+                  <label className="block text-[9px] text-slate-400 font-bold mb-1 uppercase">مدة التسليم (أيام عمل)</label>
+                  <input type="text" value={formDeliveryDays} onChange={e=>setFormDeliveryDays(e.target.value)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-slate-50/50" placeholder="14-21"/>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[9px] text-slate-400 font-bold mb-1 uppercase">نسبة الخصم الإجمالي (%)</label>
+                    <input type="number" value={formDiscountPct} onChange={e=>setFormDiscountPct(parseFloat(e.target.value)||0)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-slate-50/50" min="0" max="100"/>
+                  </div>
+                  <div>
+                    <label className="block text-[9px] text-slate-400 font-bold mb-1 uppercase">ضريبة القيمة المضافة (%)</label>
+                    <input type="number" value={formTaxPct} onChange={e=>setFormTaxPct(parseFloat(e.target.value)||0)} className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-slate-50/50" min="0"/>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* RIGHT COLUMN: PREMIUM A4 PRINT DOCUMENT PREVIEW (7/12 width) */}

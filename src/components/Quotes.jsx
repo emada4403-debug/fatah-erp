@@ -4,6 +4,8 @@ import {
   FileText, ChevronRight, Package, Lock
 } from 'lucide-react';
 import { DB } from '../db/db.js';
+import { toast } from './Toast.jsx';
+import { confirmModal } from './ConfirmModal.jsx';
 
 // ── Pre-fill constants ────────────────────────────────────────────────────────
 const DEFAULT_WK = (type) => type==='galvanized'||type==='black' ? [
@@ -96,8 +98,18 @@ export default function Quotes({ quotes, products, settings, onUpdate, onStartCr
 
 
 
-  const handleSetStatus = (s) => { DB.update('quotes',statusChangingQuote.id,{status:s}); onUpdate(); setStatusChangingQuote(null); };
-  const handleDelete    = (q) => { if (window.confirm(`حذف "${q.number}"?`)) { DB.delete('quotes',q.id); onUpdate(); } };
+  const handleSetStatus = (s) => { DB.update('quotes',statusChangingQuote.id,{status:s}); onUpdate(); setStatusChangingQuote(null); toast.success('📥 تم تحديث حالة عرض السعر بنجاح'); };
+  const handleDelete    = async (q) => {
+    const confirmed = await confirmModal.show({
+      title: 'حذف عرض السعر',
+      message: `هل أنت متأكد من رغبتك في حذف عرض السعر رقم "${q.number}"؟ لا يمكن استعادة البيانات بعد ذلك.`
+    });
+    if (confirmed) {
+      DB.delete('quotes', q.id);
+      onUpdate();
+      toast.success(`🗑️ تم حذف عرض السعر "${q.number}" بنجاح`);
+    }
+  };
 
   // ── Print ──────────────────────────────────────────────────────────────────────
   const handlePrint = (q) => {
@@ -210,7 +222,7 @@ export default function Quotes({ quotes, products, settings, onUpdate, onStartCr
 </div></body></html>`;
 
     const pw = window.open('','_blank','width=1000,height=800');
-    if (!pw) { alert('يرجى السماح بالنوافذ المنبثقة ثم اضغط طباعة مرة أخرى'); return; }
+    if (!pw) { toast.error('يرجى السماح بالنوافذ المنبثقة ثم اضغط طباعة مرة أخرى'); return; }
     pw.document.open(); pw.document.write(html); pw.document.close();
     setTimeout(() => { if (pw&&!pw.closed) { pw.focus(); pw.print(); } }, 1200);
   };

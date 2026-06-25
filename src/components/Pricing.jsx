@@ -5,6 +5,8 @@ import {
   Package
 } from 'lucide-react';
 import { DB } from '../db/db.js';
+import { toast } from './Toast.jsx';
+import { confirmModal } from './ConfirmModal.jsx';
 import { CostEngine } from '../db/costEngine.js';
 
 export default function Pricing({ products, materials, priceHistory, onUpdate }) {
@@ -97,12 +99,12 @@ export default function Pricing({ products, materials, priceHistory, onUpdate })
   // Save Add/Edit
   const handleSaveMaterial = () => {
     if (!formName.trim()) {
-      alert('يرجى إدخال اسم المادة الخام');
+      toast.error('يرجى إدخال اسم المادة الخام');
       return;
     }
     const entered = parseFloat(formEnteredPrice);
     if (isNaN(entered) || entered <= 0) {
-      alert('يرجى إدخال سعر صحيح');
+      toast.error('يرجى إدخال سعر صحيح');
       return;
     }
 
@@ -122,14 +124,17 @@ export default function Pricing({ products, materials, priceHistory, onUpdate })
       lastUpdated: new Date().toISOString()
     };
 
-    if (isAddMaterialMode) {
-      DB.insert('raw_materials', data);
+    if (isAddMaterialMode || !editingMaterial || editingMaterial.id === 'temp') {
+      const inserted = DB.insert('raw_materials', data);
+      DB.logPriceChange(inserted.id, 0, inserted.price);
+      toast.success(`🎉 تم إضافة المادة الخام "${data.name}" بنجاح`);
     } else {
       const oldPrice = editingMaterial.price;
-      if (Math.abs(oldPrice - netPrice) > 0.01) {
-        DB.logPriceChange(editingMaterial.id, oldPrice, netPrice);
-      }
       DB.update('raw_materials', editingMaterial.id, data);
+      if (oldPrice !== data.price) {
+        DB.logPriceChange(editingMaterial.id, oldPrice, data.price);
+      }
+      toast.success(`📝 تم تحديث بيانات المادة الخام "${data.name}" بنجاح`);
     }
 
     onUpdate();
@@ -139,28 +144,37 @@ export default function Pricing({ products, materials, priceHistory, onUpdate })
   };
 
   // Delete Material
-  const handleDeleteMaterial = (m) => {
-    if (window.confirm(`هل أنت متأكد من حذف المادة الخام "${m.name}"؟`)) {
+  const handleDeleteMaterial = async (m) => {
+    const confirmed = await confirmModal.show({
+      title: 'حذف المادة الخام',
+      message: `هل أنت متأكد من حذف المادة الخام "${m.name}"؟ سيؤثر هذا على حسابات تكلفة المنتجات المرتبطة بها.`
+    });
+    if (confirmed) {
       DB.delete('raw_materials', m.id);
       onUpdate();
+      toast.success(`🗑️ تم حذف المادة الخام "${m.name}" بنجاح`);
     }
   };
 
   // Bulk Margin Update
-  const handleBulkMarginUpdate = () => {
+  const handleBulkMarginUpdate = async () => {
     const val = parseFloat(bulkMarginValue);
     if (isNaN(val) || val < 0) {
-      alert('يرجى إدخال قيمة صحيحة');
+      toast.error('يرجى إدخال قيمة صحيحة');
       return;
     }
 
-    if (window.confirm(`هل أنت متأكد من تحديث هامش الربح لجميع المنتجات (${products.length} منتج) إلى ${val}%؟`)) {
+    const confirmed = await confirmModal.show({
+      title: 'تعديل هوامش الربح جماعياً',
+      message: `هل أنت متأكد من تحديث هامش الربح لجميع المنتجات (${products.length} منتج) إلى ${val}%؟`
+    });
+    if (confirmed) {
       products.forEach(p => {
         DB.update('products', p.id, { marginPct: val });
       });
       onUpdate();
       setBulkMarginValue('');
-      alert('تم تحديث هامش الربح لجميع المنتجات بنجاح');
+      toast.success('📈 تم تحديث هامش الربح لجميع المنتجات بنجاح');
     }
   };
 
