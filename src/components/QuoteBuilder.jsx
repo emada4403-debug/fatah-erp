@@ -710,12 +710,12 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="bg-surface border-y border-surface-container-high">
-                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase w-16">Item</th>
+                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase w-12">Item</th>
                 <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase">Description</th>
-                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-24">Unit</th>
-                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-32">Qty</th>
-                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-32">Rate (L.E)</th>
-                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-40">Total (L.E)</th>
+                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-16">Unit</th>
+                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-20">Qty</th>
+                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-24">Rate (L.E)</th>
+                <th class="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-28">Total (L.E)</th>
               </tr>
             </thead>
             <tbody class="align-top">
@@ -927,18 +927,30 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
             {!accLocked && (
               <div className="space-y-4">
                 <div>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-2">اضغط لإضافة / حذف من عرض السعر:</p>
-                  <div className="grid grid-cols-2 gap-2 max-h-44 overflow-y-auto pr-1">
-                    {products.filter(p=>p.active!==false && p.categoryId !== 'cat_galvanized' && p.categoryId !== 'cat_black').map(prod=>{
-                      const added = formAccessories.some(a=>a.productId===prod.id);
-                      return <button key={prod.id} type="button" onClick={()=>added?handleRemoveAccessory(prod.id):handleAddAccessory(prod)}
-                        className={`flex flex-col items-center gap-1 p-2 rounded-xl border text-center text-[10px] transition-all cursor-pointer ${added?'border-[#006780] bg-[#006780]/5 text-[#02273b] font-bold':'border-slate-100 hover:border-slate-200 text-slate-600'}`}>
-                        {prod.image?<div className="w-8 h-8 overflow-hidden rounded bg-slate-50 flex items-center justify-center"><img src={prod.image} alt="" className="w-full h-full object-contain"/></div>:<div className="w-8 h-8 bg-slate-100 rounded flex items-center justify-center"><Package className="w-4 h-4 text-slate-350"/></div>}
-                        <span className="leading-tight mt-1">{prod.name}</span>
-                        {added&&<span className="text-[8px] font-bold text-emerald-600">✓</span>}
-                      </button>;
-                    })}
-                  </div>
+                  <label className="block text-[9px] font-bold text-slate-400 mb-1.5 uppercase">اختر منتجاً لإضافته إلى جدول المكونات:</label>
+                  <select 
+                    value="" 
+                    onChange={e => {
+                      const prodId = e.target.value;
+                      if (!prodId) return;
+                      const prod = products.find(p => p.id === prodId);
+                      if (prod) handleAddAccessory(prod);
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-50/50"
+                  >
+                    <option value="">— اختر منتجاً من المنتجات المتاحة لإضافته —</option>
+                    {products
+                      .filter(p => p.active !== false && p.categoryId !== 'cat_galvanized' && p.categoryId !== 'cat_black' && !formAccessories.some(a => a.productId === p.id))
+                      .map(p => {
+                        const price = CostEngine.calculate(p)?.finalPrice || p.priceOverride || 0;
+                        return (
+                          <option key={p.id} value={p.id}>
+                            {p.name} (${price.toFixed(2)})
+                          </option>
+                        );
+                      })
+                    }
+                  </select>
                 </div>
 
                 {formAccessories.length > 0 && (
@@ -1104,12 +1116,12 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-surface border-y border-surface-container-high">
-                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase w-16">Item</th>
+                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase w-12">Item</th>
                         <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase">Description</th>
-                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-24">Unit</th>
-                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-32">Qty</th>
-                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-32">Rate (L.E)</th>
-                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-40">Total (L.E)</th>
+                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-16">Unit</th>
+                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-20">Qty</th>
+                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-24">Rate (L.E)</th>
+                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-28">Total (L.E)</th>
                       </tr>
                     </thead>
                     <tbody className="align-top">
