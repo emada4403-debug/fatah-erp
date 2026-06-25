@@ -202,9 +202,17 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
               ...item,
               productId: prod.id,
               productName: prod.name,
+              itemTitle: TYPE_TITLE[formProductType] || prod.name.toUpperCase(),
+              itemDesc: TYPE_DESC[formProductType] || prod.name,
               unitType: prod.unitType,
               unitPrice: calc ? calc.finalPrice : 0,
               image: prod.image || ''
+            };
+          } else {
+            return {
+              ...item,
+              productId: '',
+              image: ''
             };
           }
         }
@@ -740,13 +748,22 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                           )}
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <div className="sm:col-span-3">
-                              <label className="block text-[9px] text-slate-400 font-bold mb-0.5">اسم المنتج</label>
-                              <select value={item.productId} onChange={e => handleItemChange(item.id, 'productId', e.target.value)} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white">
+                              <label className="block text-[9px] text-slate-400 font-bold mb-0.5">استيراد منتج مسجل (اختياري للتعبئة التلقائية)</label>
+                              <select value={item.productId || ''} onChange={e => handleItemChange(item.id, 'productId', e.target.value)} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780] bg-white">
+                                <option value="">-- أدخل البيانات يدوياً / اختر منتجاً للاستيراد --</option>
                                 {products.filter(p => p.active !== false).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                               </select>
                             </div>
+                            <div className="sm:col-span-2">
+                              <label className="block text-[9px] text-slate-400 font-bold mb-0.5">اسم البند / المنتج</label>
+                              <input type="text" value={item.productName || ''} onChange={e => handleItemChange(item.id, 'productName', e.target.value)} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" placeholder="مثال: دكت صاج مجلفن..."/>
+                            </div>
                             <div>
-                              <label className="block text-[9px] text-slate-400 font-bold mb-0.5">الكمية ({item.unitType})</label>
+                              <label className="block text-[9px] text-slate-400 font-bold mb-0.5">الوحدة</label>
+                              <input type="text" value={item.unitType || ''} onChange={e => handleItemChange(item.id, 'unitType', e.target.value)} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" placeholder="م²، طن، كجم..."/>
+                            </div>
+                            <div>
+                              <label className="block text-[9px] text-slate-400 font-bold mb-0.5">الكمية</label>
                               <input type="number" value={item.qty || ''} onChange={e => handleItemChange(item.id, 'qty', parseFloat(e.target.value) || 0)} className="w-full px-2 py-1 rounded border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" min="0" step="0.001"/>
                             </div>
                             <div>
@@ -920,7 +937,7 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
 
         {/* RIGHT COLUMN: PREMIUM A4 PRINT DOCUMENT PREVIEW (7/12 width) */}
         <div className="lg:col-span-7 bg-slate-100 rounded-2xl p-4 md:p-8 border border-slate-200 shadow-inner max-h-[85vh] overflow-y-auto flex justify-center">
-          <div className="w-full max-w-[850px] bg-white rounded-lg shadow-xl border border-slate-250 p-8 md:p-12 relative print-shadow-none print-border flex flex-col justify-between" style={{aspectRatio:'1/1.414', fontFamily:"'IBM Plex Sans', sans-serif"}}>
+          <div dir="ltr" className="w-full max-w-[850px] bg-white rounded-lg shadow-xl border border-slate-250 p-8 md:p-12 relative print-shadow-none print-border flex flex-col justify-between" style={{aspectRatio:'1/1.414', fontFamily:"'IBM Plex Sans', sans-serif"}}>
             
             <div className="space-y-10">
               {/* Document Header */}
