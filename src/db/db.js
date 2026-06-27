@@ -130,7 +130,7 @@ export const DB = {
     return Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
   },
 
-  // Pull latest data from Supabase to LocalStorage
+  // Pull latest data from Supabase to LocalStorage (with merge logic to prevent wiping local data)
   async syncFromCloud() {
     if (!isSupabaseConfigured) return false;
     try {
@@ -142,7 +142,29 @@ export const DB = {
           continue;
         }
         if (data) {
-          localStorage.setItem(this._key(table), JSON.stringify(data));
+          const localRecords = this.getAll(table);
+          
+          if (data.length === 0) {
+            // Cloud has no records for this table, keep local records and do not overwrite
+            continue;
+          }
+
+          // Merge local and cloud records based on ID and updatedAt
+          const merged = [...localRecords];
+          data.forEach(cloudRec => {
+            const idx = merged.findIndex(r => r.id === cloudRec.id);
+            if (idx === -1) {
+              merged.push(cloudRec);
+            } else {
+              const localUpdate = merged[idx].updatedAt || merged[idx].createdAt || '';
+              const cloudUpdate = cloudRec.updatedAt || cloudRec.createdAt || '';
+              if (!localUpdate || new Date(cloudUpdate) > new Date(localUpdate)) {
+                merged[idx] = cloudRec;
+              }
+            }
+          });
+
+          localStorage.setItem(this._key(table), JSON.stringify(merged));
         }
       }
       return true;
