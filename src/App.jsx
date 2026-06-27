@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DB } from './db/db.js';
+import { supabase } from './db/supabaseClient.js';
 import Layout from './components/Layout.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import Products from './components/Products.jsx';
@@ -69,6 +70,8 @@ export default function App() {
 
   // Initialize DB and state on first load
   useEffect(() => {
+    let channel = null;
+
     const initialize = async () => {
       try {
         if (DB.isSupabaseConfigured()) {
@@ -101,6 +104,49 @@ export default function App() {
 
     initialize();
 
+    // Subscribe to real-time changes
+    if (DB.isSupabaseConfigured() && supabase) {
+      channel = supabase
+        .channel('db-realtime-sync')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public' },
+          (payload) => {
+            const { table, eventType, new: newRecord, old: oldRecord } = payload;
+            const key = DB._key(table);
+            const localData = DB.getAll(table);
+
+            if (eventType === 'INSERT') {
+              if (!localData.some(r => r.id === newRecord.id)) {
+                localData.push(newRecord);
+                localStorage.setItem(key, JSON.stringify(localData));
+                syncData();
+              }
+            } else if (eventType === 'UPDATE') {
+              const idx = localData.findIndex(r => r.id === newRecord.id);
+              if (idx !== -1) {
+                const localUpdate = localData[idx].updatedAt || localData[idx].createdAt || '';
+                const cloudUpdate = newRecord.updatedAt || newRecord.createdAt || '';
+                if (!localUpdate || new Date(cloudUpdate) > new Date(localUpdate)) {
+                  localData[idx] = newRecord;
+                  localStorage.setItem(key, JSON.stringify(localData));
+                  syncData();
+                }
+              } else {
+                localData.push(newRecord);
+                localStorage.setItem(key, JSON.stringify(localData));
+                syncData();
+              }
+            } else if (eventType === 'DELETE') {
+              const filtered = localData.filter(r => r.id !== oldRecord.id);
+              localStorage.setItem(key, JSON.stringify(filtered));
+              syncData();
+            }
+          }
+        )
+        .subscribe();
+    }
+
     // Check hash for direct navigation
     const hash = window.location.hash.replace('#', '') || 'dashboard';
     const s = DB.getAll('settings')[0] || {};
@@ -109,7 +155,6 @@ export default function App() {
     const isRestricted = ['pricing', 'reports', 'settings'].includes(hash);
 
     if (isRestricted && hasPin && !sessionUnlocked) {
-      // Default restricted navigation to dashboard if locked on reload
       setActiveTab('dashboard');
       window.location.hash = 'dashboard';
     } else {
@@ -127,7 +172,6 @@ export default function App() {
         setShowPinModal(true);
         setPinInput('');
         setPinError(false);
-        // keep current hash
         window.location.hash = activeTab;
       } else {
         setActiveTab(h);
@@ -135,7 +179,12 @@ export default function App() {
     };
 
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, [activeTab]);
 
   // Change tab helper
