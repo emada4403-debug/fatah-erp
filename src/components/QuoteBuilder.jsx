@@ -506,12 +506,12 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
 
     const validityDays = getValidityDays();
     const termsHTML = `
-      <div class="mb-12 bg-surface p-6 rounded border border-surface-container-high text-left">
+      <div class="mb-16 bg-surface p-6 rounded border border-surface-container-high text-left">
         <h4 class="font-label-sm text-primary tracking-widest uppercase mb-6">IV. Commercial Terms</h4>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <p class="font-label-sm text-outline uppercase mb-2">Payment Structure</p>
-            <p class="font-body-md text-on-surface text-sm">${formPaymentTerms || '—'}</p>
+            <p class="font-body-md text-on-surface text-sm whitespace-pre-line">${formPaymentTerms || '—'}</p>
           </div>
           <div>
             <p class="font-label-sm text-outline uppercase mb-2">Delivery Timeline</p>
@@ -694,7 +694,7 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
           <img alt="Al-Fath Engineering Industries" class="h-20 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuArXN-t3d9q_3fbo0qB3itz0xhAYPBY-VMmZYQnQpKv9ctfxF4MBhdI9HJbPGDA56gxSMfFI_xhfWistOwx7E1G3I7gaacsaR-5pCTyxxg_WoEoxH7mJZj3KJt57qP-sKqPlP4gMBXW9YLugctm4i9A1c4G1cfXY1U9Wy3hE6AwhIDIHO8nft8srj9AlcxH3Uqx0QfciBCEQ61DMDiiXeRpv1-HD6NiMoj79IJZZCpw5bLSM9I-6wK6G10rs0M_-V8n61ykqCloVMF3">
           <div class="mt-4">
             <p class="font-label-sm text-outline tracking-wider uppercase mb-1">Client</p>
-            <h2 class="font-headline-md text-on-surface font-bold">${formClientName || 'ELNADA FOR CONTRACTING'}</h2>
+            <h2 class="font-headline-md text-on-surface font-bold">${formClientName || ''}</h2>
           </div>
         </div>
         <div class="text-right mt-6 md:mt-0 flex flex-col items-end">
@@ -1171,7 +1171,7 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
           <div dir="ltr" className="w-full max-w-[1000px] mx-auto bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant print-shadow-none print-border overflow-hidden flex flex-col justify-between" style={{fontFamily:"'IBM Plex Sans', sans-serif"}}>
             <div className="p-8 md:p-12 text-left">
               {/* Document Header */}
-              <div ref={clientSectionRef} className="flex flex-col md:flex-row justify-between items-start mb-12 border-b border-surface-container-high pb-8 gap-4">
+              <div ref={clientSectionRef} className="flex flex-col md:flex-row justify-between items-start mb-16 border-b border-surface-container-high pb-8 gap-4 scroll-mt-8">
                 <div className="flex flex-col gap-4">
                   <img 
                     alt="Al-Fath Engineering Industries Logo" 
@@ -1180,7 +1180,7 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                   />
                   <div className="mt-4">
                     <p className="font-label-sm text-outline tracking-wider uppercase mb-1">Client</p>
-                    <h2 className="font-headline-md text-on-surface font-bold uppercase">{formClientName || 'ELNADA FOR CONTRACTING'}</h2>
+                    <h2 className="font-headline-md text-on-surface font-bold uppercase">{formClientName || ''}</h2>
                   </div>
                 </div>
                 <div className="text-right mt-6 md:mt-0 flex flex-col items-end">
@@ -1203,7 +1203,7 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
 
 
               {/* I. Primary Fabrication Schedule */}
-              <div ref={itemsSectionRef} className="mb-12">
+              <div ref={itemsSectionRef} className="mb-16 scroll-mt-8">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="h-px bg-surface-container-high flex-1"></div>
                   <h4 class="font-label-sm text-on-surface-variant tracking-widest uppercase">I. Primary Fabrication Schedule</h4>
@@ -1293,7 +1293,7 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
               </div>
 
               {/* II & III. Accessories and Supplements wrapper */}
-              <div ref={extrasSectionRef}>
+              <div ref={extrasSectionRef} className="scroll-mt-8">
                 {/* II. Specialized Component Index */}
                 {formAccessories.length > 0 && (
                   <div className="mb-12">
@@ -1391,12 +1391,12 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
               </div>
 
               {/* IV. Commercial Terms */}
-              <div ref={termsSectionRef} className="mb-12 bg-surface p-6 rounded border border-surface-container-high text-left">
+              <div ref={termsSectionRef} className="mb-16 bg-surface p-6 rounded border border-surface-container-high text-left scroll-mt-8">
                 <h4 className="font-label-sm text-primary tracking-widest uppercase mb-6">IV. Commercial Terms</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <p className="font-label-sm text-outline uppercase mb-2">Payment Structure</p>
-                    <p className="font-body-md text-on-surface text-sm">{formPaymentTerms || '—'}</p>
+                    <p className="font-body-md text-on-surface text-sm whitespace-pre-line">{formPaymentTerms || '—'}</p>
                   </div>
                   <div>
                     <p className="font-label-sm text-outline uppercase mb-2">Delivery Timeline</p>
