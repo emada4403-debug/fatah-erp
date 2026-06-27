@@ -122,12 +122,12 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
         id: mkId(),
         productId: defaultProd ? defaultProd.id : '',
         productName: defaultProd ? defaultProd.name : '',
-        itemTitle: TYPE_TITLE[currentType] || (defaultProd ? defaultProd.name.toUpperCase() : ''),
-        itemDesc: TYPE_DESC[currentType] || (defaultProd ? defaultProd.name : ''),
+        itemTitle: defaultProd?.docTitle || TYPE_TITLE[currentType] || (defaultProd ? defaultProd.name.toUpperCase() : ''),
+        itemDesc: defaultProd?.detailedDesc || TYPE_DESC[currentType] || (defaultProd ? defaultProd.name : ''),
         qty: 1,
         unitPrice: calc ? calc.finalPrice : 0,
         discountPct: 0,
-        techNotes: TYPE_TECH[currentType] || '',
+        techNotes: defaultProd?.techNotes || TYPE_TECH[currentType] || '',
         unitType: defaultProd ? defaultProd.unitType : 'Ton',
         subsection: subsectionLabel
       }]);
@@ -158,9 +158,9 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
       if (prod) {
         return {
           ...item,
-          itemTitle: TYPE_TITLE[type] || prod.name.toUpperCase(),
-          itemDesc: TYPE_DESC[type] || prod.name,
-          techNotes: TYPE_TECH[type] || '',
+          itemTitle: prod.docTitle || TYPE_TITLE[type] || prod.name.toUpperCase(),
+          itemDesc: prod.detailedDesc || TYPE_DESC[type] || prod.name,
+          techNotes: prod.techNotes || TYPE_TECH[type] || '',
         };
       }
       return item;
@@ -180,12 +180,12 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
       id: mkId(),
       productId: prod.id,
       productName: prod.name,
-      itemTitle: TYPE_TITLE[formProductType] || prod.name.toUpperCase(),
-      itemDesc: TYPE_DESC[formProductType] || prod.name,
+      itemTitle: prod.docTitle || TYPE_TITLE[formProductType] || prod.name.toUpperCase(),
+      itemDesc: prod.detailedDesc || TYPE_DESC[formProductType] || prod.name,
       qty: 1,
       unitPrice: calc ? calc.finalPrice : 0,
       discountPct: 0,
-      techNotes: TYPE_TECH[formProductType] || '',
+      techNotes: prod.techNotes || TYPE_TECH[formProductType] || '',
       unitType: prod.unitType || 'Ton',
       subsection: subsection
     }]);
@@ -204,8 +204,9 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
               ...item,
               productId: prod.id,
               productName: prod.name,
-              itemTitle: TYPE_TITLE[formProductType] || prod.name.toUpperCase(),
-              itemDesc: TYPE_DESC[formProductType] || prod.name,
+              itemTitle: prod.docTitle || TYPE_TITLE[formProductType] || prod.name.toUpperCase(),
+              itemDesc: prod.detailedDesc || TYPE_DESC[formProductType] || prod.name,
+              techNotes: prod.techNotes || TYPE_TECH[formProductType] || '',
               unitType: prod.unitType,
               unitPrice: calc ? calc.finalPrice : 0,
               image: prod.image || ''

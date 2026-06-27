@@ -28,6 +28,9 @@ export default function Products({ products, materials, categories, isAdmin, onU
   const [formMinMargin, setFormMinMargin] = useState(15);
   const [formActive, setFormActive] = useState(true);
   const [formImage, setFormImage] = useState('');
+  const [formDocTitle, setFormDocTitle] = useState('');
+  const [formDetailedDesc, setFormDetailedDesc] = useState('');
+  const [formTechNotes, setFormTechNotes] = useState('');
 
   const [formLabor, setFormLabor] = useState(0);
   const [formOverheadFixed, setFormOverheadFixed] = useState(0);
@@ -96,6 +99,10 @@ export default function Products({ products, materials, categories, isAdmin, onU
     setFormScrapPct('');
     setFormPurchasePrice('');
     setFormScrapSellingPrice('');
+
+    setFormDocTitle('');
+    setFormDetailedDesc('');
+    setFormTechNotes('');
   };
 
   // Open Add Form
@@ -122,6 +129,9 @@ export default function Products({ products, materials, categories, isAdmin, onU
     setFormImage(p.image || '');
 
     setFormSellingPrice(p.sellingPrice !== undefined && p.sellingPrice !== null ? p.sellingPrice : '');
+    setFormDocTitle(p.docTitle || '');
+    setFormDetailedDesc(p.detailedDesc || '');
+    setFormTechNotes(p.techNotes || '');
 
     const ce = p.costEngine || {};
     // Use raw user-entered inputs if saved (vs the embedded computed value)
@@ -229,6 +239,9 @@ export default function Products({ products, materials, categories, isAdmin, onU
       sellingPrice: parseFloat(formSellingPrice) > 0 ? parseFloat(formSellingPrice) : null,
       marginPct: parseFloat(formMargin) || 0,
       minMarginPct: parseFloat(formMinMargin) || 0,
+      docTitle: formDocTitle.trim(),
+      detailedDesc: formDetailedDesc.trim(),
+      techNotes: formTechNotes.trim(),
       costEngine: {
         rawMaterials: formMaterials.filter(m => m.materialId),
         scrapConfig: {
@@ -309,6 +322,9 @@ export default function Products({ products, materials, categories, isAdmin, onU
       active: formActive,
       image: formImage,
       sellingPrice: parseFloat(formSellingPrice) > 0 ? parseFloat(formSellingPrice) : null,
+      docTitle: formDocTitle.trim(),
+      detailedDesc: formDetailedDesc.trim(),
+      techNotes: formTechNotes.trim(),
       costEngine: {
         rawMaterials: formMaterials.filter(m => m.materialId && parseFloat(m.qty) > 0),
         scrapConfig: {
@@ -1379,6 +1395,43 @@ export default function Products({ products, materials, categories, isAdmin, onU
                             })()}
                           </div>
                         )}
+                      </div>
+
+                      {/* Default Document Text Fields */}
+                      <div className="border-t border-slate-800 pt-4 space-y-4">
+                        <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-wider">📄 نصوص عروض الأسعار الافتراضية للعميل (المستندات)</h4>
+                        <div className="grid grid-cols-1 gap-4">
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-400 mb-1.5">عنوان البند في المستند (Item Title in Document)</label>
+                            <input
+                              type="text"
+                              value={formDocTitle}
+                              onChange={(e) => setFormDocTitle(e.target.value)}
+                              className="w-full px-4 py-3 rounded-xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-950 text-white placeholder-slate-600 transition-all text-left font-mono"
+                              placeholder="مثال: RECTANGULAR GALVANIZED SHEET METAL DUCTS"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-400 mb-1.5">الوصف التفصيلي للبند في المستند (Item Detailed Description)</label>
+                            <textarea
+                              value={formDetailedDesc}
+                              onChange={(e) => setFormDetailedDesc(e.target.value)}
+                              className="w-full px-4 py-3 rounded-xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-950 text-white placeholder-slate-600 transition-all text-left leading-relaxed"
+                              placeholder="مثال: Supply and manufacturing only of rectangular galvanized sheet metal ducts according to specifications..."
+                              rows="2"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-400 mb-1.5">الملاحظات الفنية للمنتج في المستند (Technical Notes)</label>
+                            <textarea
+                              value={formTechNotes}
+                              onChange={(e) => setFormTechNotes(e.target.value)}
+                              className="w-full px-4 py-3 rounded-xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-950 text-white placeholder-slate-600 transition-all text-left leading-relaxed font-mono"
+                              placeholder="مثال:&#10;1. Thickness according to SMACNA.&#10;2. Galvanized sheet metals."
+                              rows="3"
+                            />
+                          </div>
+                        </div>
                       </div>
 
                       {/* Status and Limits */}
