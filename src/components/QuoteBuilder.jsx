@@ -35,6 +35,12 @@ const DEFAULT_TR = (type) => type === 'galvanized' ? [
 const mkId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 export default function QuoteBuilder({ quotes, clients, products, settings, onUpdate, editingQuote, setEditingQuote, isAddMode, setIsAddMode, defaultProductType }) {
+  const clientSectionRef = React.useRef(null);
+  const itemsSectionRef = React.useRef(null);
+  const extrasSectionRef = React.useRef(null);
+  const termsSectionRef = React.useRef(null);
+  const previewContainerRef = React.useRef(null);
+
   const [formNumber, setFormNumber] = useState('');
   const [formClientId, setFormClientId] = useState('');
   const [formClientName, setFormClientName] = useState('');
@@ -138,6 +144,27 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
       setSuppLocked(false);
     }
   }, [editingQuote, defaultProductType]);
+
+  // Scroll to active section in A4 preview when builder tabs change
+  useEffect(() => {
+    let target = null;
+    if (activeBuilderTab === 'client') target = clientSectionRef.current;
+    if (activeBuilderTab === 'items') target = itemsSectionRef.current;
+    if (activeBuilderTab === 'extras') target = extrasSectionRef.current;
+    if (activeBuilderTab === 'terms') target = termsSectionRef.current;
+
+    if (target && previewContainerRef.current) {
+      const container = previewContainerRef.current;
+      const containerTop = container.getBoundingClientRect().top;
+      const targetTop = target.getBoundingClientRect().top;
+      const scrollPosition = targetTop - containerTop + container.scrollTop - 20;
+
+      container.scrollTo({
+        top: scrollPosition,
+        behavior: 'smooth'
+      });
+    }
+  }, [activeBuilderTab]);
 
   // Client Selection
   const handleClientSelect = (clientId) => {
@@ -561,7 +588,7 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
 <head>
   <meta charset="utf-8">
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>Quotation ${formNumber}</title>
+  <title>${formClientName || 'Company'}_${formNumber || 'QT'}_${formDate || today()}</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script id="tailwind-config">
@@ -1145,11 +1172,11 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
         </div>
 
         {/* RIGHT COLUMN: PREMIUM A4 PRINT DOCUMENT PREVIEW (7/12 width) */}
-        <div className="lg:col-span-7 bg-slate-100 rounded-2xl p-4 md:p-8 border border-slate-200 shadow-inner max-h-[85vh] overflow-y-auto flex justify-center">
+        <div ref={previewContainerRef} className="lg:col-span-7 bg-slate-100 rounded-2xl p-4 md:p-8 border border-slate-200 shadow-inner max-h-[85vh] overflow-y-auto flex justify-center scroll-smooth">
           <div dir="ltr" className="w-full max-w-[1000px] mx-auto bg-surface-container-lowest rounded-lg shadow-sm border border-outline-variant print-shadow-none print-border overflow-hidden flex flex-col justify-between" style={{fontFamily:"'IBM Plex Sans', sans-serif"}}>
             <div className="p-8 md:p-12 text-left">
               {/* Document Header */}
-              <div className="flex flex-col md:flex-row justify-between items-start mb-12 border-b border-surface-container-high pb-8 gap-4">
+              <div ref={clientSectionRef} className="flex flex-col md:flex-row justify-between items-start mb-12 border-b border-surface-container-high pb-8 gap-4">
                 <div className="flex flex-col gap-4">
                   <img 
                     alt="Al-Fath Engineering Industries Logo" 
@@ -1181,7 +1208,7 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
 
 
               {/* I. Primary Fabrication Schedule */}
-              <div className="mb-12">
+              <div ref={itemsSectionRef} className="mb-12">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="h-px bg-surface-container-high flex-1"></div>
                   <h4 class="font-label-sm text-on-surface-variant tracking-widest uppercase">I. Primary Fabrication Schedule</h4>
@@ -1270,103 +1297,106 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                 </div>
               </div>
 
-              {/* II. Specialized Component Index */}
-              {formAccessories.length > 0 && (
-                <div className="mb-12">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="h-px bg-surface-container-high flex-1"></div>
-                    <h4 className="font-label-sm text-on-surface-variant tracking-widest uppercase">II. Specialized Component Index</h4>
-                    <div className="h-px bg-surface-container-high flex-1"></div>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
-                    {formAccessories.map((a, i) => (
-                      <div key={i} className="bg-surface rounded border border-surface-container-high p-4 flex flex-col hover:border-secondary transition-colors">
-                        <div className="h-24 bg-surface-container-lowest rounded mb-3 flex items-center justify-center p-2 border border-surface-container">
-                          {a.image ? (
-                            <img className="h-full object-contain mix-blend-multiply" src={resolveImage(a.image)} alt={a.name} />
+              {/* II & III. Accessories and Supplements wrapper */}
+              <div ref={extrasSectionRef}>
+                {/* II. Specialized Component Index */}
+                {formAccessories.length > 0 && (
+                  <div className="mb-12">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="h-px bg-surface-container-high flex-1"></div>
+                      <h4 className="font-label-sm text-on-surface-variant tracking-widest uppercase">II. Specialized Component Index</h4>
+                      <div className="h-px bg-surface-container-high flex-1"></div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
+                      {formAccessories.map((a, i) => (
+                        <div key={i} className="bg-surface rounded border border-surface-container-high p-4 flex flex-col hover:border-secondary transition-colors">
+                          <div className="h-24 bg-surface-container-lowest rounded mb-3 flex items-center justify-center p-2 border border-surface-container">
+                            {a.image ? (
+                              <img className="h-full object-contain mix-blend-multiply" src={resolveImage(a.image)} alt={a.name} />
+                            ) : (
+                              <span className="text-2xl">📦</span>
+                            )}
+                          </div>
+                          <h5 className="font-label-sm text-on-surface font-bold mb-1">{a.name}</h5>
+                          {a.description ? (
+                            <p className="font-body-md text-on-surface-variant text-xs mb-3 flex-1">{a.description}</p>
                           ) : (
-                            <span className="text-2xl">📦</span>
+                            <div className="flex-1"></div>
                           )}
+                          <div className="flex justify-between items-end mt-auto pt-3 border-t border-surface-container-high">
+                            <span className="font-label-sm text-outline text-[10px]">UNIT PRICE</span>
+                            <span className="font-body-md text-primary font-bold">${fmtEN(a.unitPrice)}</span>
+                          </div>
                         </div>
-                        <h5 className="font-label-sm text-on-surface font-bold mb-1">{a.name}</h5>
-                        {a.description ? (
-                          <p className="font-body-md text-on-surface-variant text-xs mb-3 flex-1">{a.description}</p>
-                        ) : (
-                          <div className="flex-1"></div>
-                        )}
-                        <div className="flex justify-between items-end mt-auto pt-3 border-t border-surface-container-high">
-                          <span className="font-label-sm text-outline text-[10px]">UNIT PRICE</span>
-                          <span className="font-body-md text-primary font-bold">${fmtEN(a.unitPrice)}</span>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* III. Technical Supplements & Surcharges */}
-              {(formWorkmanship.filter(r => r.desc).length > 0 || formTransformation.filter(r => r.desc).length > 0) && (
-                <div className="mb-12">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="h-px bg-surface-container-high flex-1"></div>
-                    <h4 className="font-label-sm text-on-surface-variant tracking-widest uppercase">
-                      {formAccessories.length > 0 ? 'III' : 'II'}. Technical Supplements & Surcharges
-                    </h4>
-                    <div className="h-px bg-surface-container-high flex-1"></div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                    {formWorkmanship.filter(r => r.desc).length > 0 && (
-                      <div>
-                        <h5 className="font-label-sm text-primary uppercase mb-3 flex items-center gap-2">
-                          <span className="w-4 h-px bg-primary"></span> Assembly Workmanship
-                        </h5>
-                        <table className="w-full text-left text-sm border-collapse">
-                          <thead>
-                            <tr className="bg-surface border-y border-surface-container-high">
-                              <th className="py-2 px-3 font-label-sm text-on-surface-variant font-medium">Description</th>
-                              <th className="py-2 px-3 font-label-sm text-on-surface-variant font-medium text-right">Price (L.E)</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {formWorkmanship.filter(r => r.desc).map((r, idx) => (
-                              <tr key={r.id} className={`border-b border-surface-container ${idx % 2 === 1 ? 'bg-surface-bright' : ''}`}>
-                                <td className="py-3 px-3 text-on-surface">{r.desc}</td>
-                                <td className="py-3 px-3 text-on-surface text-right font-medium">{r.price}</td>
+                {/* III. Technical Supplements & Surcharges */}
+                {(formWorkmanship.filter(r => r.desc).length > 0 || formTransformation.filter(r => r.desc).length > 0) && (
+                  <div className="mb-12">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="h-px bg-surface-container-high flex-1"></div>
+                      <h4 className="font-label-sm text-on-surface-variant tracking-widest uppercase">
+                        {formAccessories.length > 0 ? 'III' : 'II'}. Technical Supplements & Surcharges
+                      </h4>
+                      <div className="h-px bg-surface-container-high flex-1"></div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                      {formWorkmanship.filter(r => r.desc).length > 0 && (
+                        <div>
+                          <h5 className="font-label-sm text-primary uppercase mb-3 flex items-center gap-2">
+                            <span className="w-4 h-px bg-primary"></span> Assembly Workmanship
+                          </h5>
+                          <table className="w-full text-left text-sm border-collapse">
+                            <thead>
+                              <tr className="bg-surface border-y border-surface-container-high">
+                                <th className="py-2 px-3 font-label-sm text-on-surface-variant font-medium">Description</th>
+                                <th className="py-2 px-3 font-label-sm text-on-surface-variant font-medium text-right">Price (L.E)</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                    {formTransformation.filter(r => r.desc).length > 0 && (
-                      <div>
-                        <h5 className="font-label-sm text-primary uppercase mb-3 flex items-center gap-2">
-                          <span className="w-4 h-px bg-primary"></span> Transformation Surcharges
-                        </h5>
-                        <table className="w-full text-left text-sm border-collapse">
-                          <thead>
-                            <tr className="bg-surface border-y border-surface-container-high">
-                              <th className="py-2 px-3 font-label-sm text-on-surface-variant font-medium">Description</th>
-                              <th className="py-2 px-3 font-label-sm text-on-surface-variant font-medium text-right">Price (L.E)</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {formTransformation.filter(r => r.desc).map((r, idx) => (
-                              <tr key={r.id} className={`border-b border-surface-container ${idx % 2 === 1 ? 'bg-surface-bright' : ''}`}>
-                                <td className="py-3 px-3 text-on-surface">{r.desc}</td>
-                                <td className="py-3 px-3 text-on-surface text-right font-medium">{r.price}</td>
+                            </thead>
+                            <tbody>
+                              {formWorkmanship.filter(r => r.desc).map((r, idx) => (
+                                <tr key={r.id} className={`border-b border-surface-container ${idx % 2 === 1 ? 'bg-surface-bright' : ''}`}>
+                                  <td className="py-3 px-3 text-on-surface">{r.desc}</td>
+                                  <td className="py-3 px-3 text-on-surface text-right font-medium">{r.price}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                      {formTransformation.filter(r => r.desc).length > 0 && (
+                        <div>
+                          <h5 className="font-label-sm text-primary uppercase mb-3 flex items-center gap-2">
+                            <span className="w-4 h-px bg-primary"></span> Transformation Surcharges
+                          </h5>
+                          <table className="w-full text-left text-sm border-collapse">
+                            <thead>
+                              <tr className="bg-surface border-y border-surface-container-high">
+                                <th className="py-2 px-3 font-label-sm text-on-surface-variant font-medium">Description</th>
+                                <th className="py-2 px-3 font-label-sm text-on-surface-variant font-medium text-right">Price (L.E)</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
+                            </thead>
+                            <tbody>
+                              {formTransformation.filter(r => r.desc).map((r, idx) => (
+                                <tr key={r.id} className={`border-b border-surface-container ${idx % 2 === 1 ? 'bg-surface-bright' : ''}`}>
+                                  <td className="py-3 px-3 text-on-surface">{r.desc}</td>
+                                  <td className="py-3 px-3 text-on-surface text-right font-medium">{r.price}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
               {/* IV. Commercial Terms */}
-              <div className="mb-12 bg-surface p-6 rounded border border-surface-container-high text-left">
+              <div ref={termsSectionRef} className="mb-12 bg-surface p-6 rounded border border-surface-container-high text-left">
                 <h4 className="font-label-sm text-primary tracking-widest uppercase mb-6">IV. Commercial Terms</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
