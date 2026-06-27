@@ -138,7 +138,7 @@ export const DB = {
       for (const table of tables) {
         const { data, error } = await supabase.from(table).select('*');
         if (error) {
-          console.error(`DB.syncFromCloud Error fetching ${table}:`, error);
+          console.error(`DB.syncFromCloud Error fetching ${table}:`, error.message || error, error.details, error.hint);
           continue;
         }
         if (data) {
@@ -184,7 +184,7 @@ export const DB = {
         if (records && records.length > 0) {
           const { error } = await supabase.from(table).upsert(records);
           if (error) {
-            console.error(`DB.syncToCloud Error uploading ${table}:`, error);
+            console.error(`DB.syncToCloud Error uploading ${table}:`, error.message || error, error.details, error.hint);
             return false;
           }
         }
