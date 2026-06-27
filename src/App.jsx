@@ -70,24 +70,33 @@ export default function App() {
   // Initialize DB and state on first load
   useEffect(() => {
     const initialize = async () => {
-      if (DB.isSupabaseConfigured()) {
-        await DB.syncFromCloud();
+      try {
+        if (DB.isSupabaseConfigured()) {
+          await DB.syncFromCloud();
+        }
+      } catch (syncError) {
+        console.error("Initialization sync error, falling back to local storage:", syncError);
       }
-      DB.seed();
-      
-      const s = DB.getAll('settings')[0] || {};
-      setSettings(s);
-      setIsAdmin(isSessionValid(s.adminPin));
-      
-      setProducts(DB.getAll('products'));
-      setMaterials(DB.getAll('raw_materials'));
-      setCategories(DB.getAll('categories'));
-      setQuotes(DB.getAll('quotes'));
-      setClients(DB.getAll('clients'));
-      setDeals(DB.getAll('deals'));
-      setPriceHistory(DB.getAll('price_history'));
 
-      setIsLoading(false);
+      try {
+        DB.seed();
+        
+        const s = DB.getAll('settings')[0] || {};
+        setSettings(s);
+        setIsAdmin(isSessionValid(s.adminPin));
+        
+        setProducts(DB.getAll('products'));
+        setMaterials(DB.getAll('raw_materials'));
+        setCategories(DB.getAll('categories'));
+        setQuotes(DB.getAll('quotes'));
+        setClients(DB.getAll('clients'));
+        setDeals(DB.getAll('deals'));
+        setPriceHistory(DB.getAll('price_history'));
+      } catch (err) {
+        console.error("Local DB initialization error:", err);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     initialize();
