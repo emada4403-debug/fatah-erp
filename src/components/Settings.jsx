@@ -227,7 +227,7 @@ CREATE TABLE IF NOT EXISTS public.products (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
     code TEXT,
-    "categoryId" TEXT REFERENCES public.categories(id) ON DELETE SET NULL,
+    "categoryId" TEXT,
     "unitType" TEXT,
     image TEXT,
     "minMarginPct" NUMERIC DEFAULT 0,
@@ -274,7 +274,7 @@ CREATE TABLE IF NOT EXISTS public.settings (
 
 CREATE TABLE IF NOT EXISTS public.price_history (
     id TEXT PRIMARY KEY,
-    "materialId" TEXT REFERENCES public.raw_materials(id) ON DELETE CASCADE,
+    "materialId" TEXT,
     "oldPrice" NUMERIC,
     "newPrice" NUMERIC,
     "changedAt" TIMESTAMPTZ DEFAULT NOW(),
@@ -285,7 +285,7 @@ CREATE TABLE IF NOT EXISTS public.price_history (
 CREATE TABLE IF NOT EXISTS public.deals (
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
-    "clientId" TEXT REFERENCES public.clients(id) ON DELETE SET NULL,
+    "clientId" TEXT,
     value NUMERIC DEFAULT 0,
     stage TEXT,
     "followUpDate" TEXT,
@@ -298,7 +298,7 @@ CREATE TABLE IF NOT EXISTS public.quotes (
     id TEXT PRIMARY KEY,
     number TEXT NOT NULL,
     "productType" TEXT,
-    "clientId" TEXT REFERENCES public.clients(id) ON DELETE SET NULL,
+    "clientId" TEXT,
     "clientName" TEXT,
     "clientContact" TEXT,
     "projectName" TEXT,
