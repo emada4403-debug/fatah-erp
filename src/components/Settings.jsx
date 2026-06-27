@@ -273,7 +273,7 @@ CREATE TABLE IF NOT EXISTS public.settings (
 );
 
 CREATE TABLE IF NOT EXISTS public.price_history (
-    id BIGSERIAL PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     "materialId" TEXT REFERENCES public.raw_materials(id) ON DELETE CASCADE,
     "oldPrice" NUMERIC,
     "newPrice" NUMERIC,
