@@ -153,15 +153,10 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
     if (activeBuilderTab === 'extras') target = extrasSectionRef.current;
     if (activeBuilderTab === 'terms') target = termsSectionRef.current;
 
-    if (target && previewContainerRef.current) {
-      const container = previewContainerRef.current;
-      const containerTop = container.getBoundingClientRect().top;
-      const targetTop = target.getBoundingClientRect().top;
-      const scrollPosition = targetTop - containerTop + container.scrollTop - 20;
-
-      container.scrollTo({
-        top: scrollPosition,
-        behavior: 'smooth'
+    if (target) {
+      target.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
       });
     }
   }, [activeBuilderTab]);
