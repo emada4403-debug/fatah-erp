@@ -234,6 +234,7 @@ CREATE TABLE IF NOT EXISTS public.products (
     "marginPct" NUMERIC DEFAULT 0,
     active BOOLEAN DEFAULT TRUE,
     "priceOverride" NUMERIC,
+    "sellingPrice" NUMERIC,
     "costEngine" JSONB,
     "createdAt" TIMESTAMPTZ DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
@@ -248,6 +249,7 @@ CREATE TABLE IF NOT EXISTS public.clients (
     address TEXT,
     type TEXT,
     stage TEXT,
+    notes TEXT,
     "createdAt" TIMESTAMPTZ DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
