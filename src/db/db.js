@@ -59,9 +59,13 @@ export const DB = {
     localStorage.setItem(this._key(table), JSON.stringify(records));
 
     // Cloud push
-    if (isSupabaseConfigured) {
-      supabase.from(table).insert(newRecord)
-        .catch(e => console.error(`DB.insert Cloud Sync Error (${table}):`, e));
+    if (isSupabaseConfigured && supabase) {
+      try {
+        supabase.from(table).insert(newRecord)
+          .catch(e => console.error(`DB.insert Cloud Sync Error (${table}):`, e));
+      } catch (e) {
+        console.error(`DB.insert Cloud Sync Exception (${table}):`, e);
+      }
     }
 
     return newRecord;
@@ -81,9 +85,13 @@ export const DB = {
     localStorage.setItem(this._key(table), JSON.stringify(records));
 
     // Cloud push
-    if (isSupabaseConfigured) {
-      supabase.from(table).update(data).eq('id', id)
-        .catch(e => console.error(`DB.update Cloud Sync Error (${table}):`, e));
+    if (isSupabaseConfigured && supabase) {
+      try {
+        supabase.from(table).update(data).eq('id', id)
+          .catch(e => console.error(`DB.update Cloud Sync Error (${table}):`, e));
+      } catch (e) {
+        console.error(`DB.update Cloud Sync Exception (${table}):`, e);
+      }
     }
 
     return updatedRecord;
@@ -94,9 +102,13 @@ export const DB = {
     localStorage.setItem(this._key(table), JSON.stringify(records));
 
     // Cloud push
-    if (isSupabaseConfigured) {
-      supabase.from(table).delete().eq('id', id)
-        .catch(e => console.error(`DB.delete Cloud Sync Error (${table}):`, e));
+    if (isSupabaseConfigured && supabase) {
+      try {
+        supabase.from(table).delete().eq('id', id)
+          .catch(e => console.error(`DB.delete Cloud Sync Error (${table}):`, e));
+      } catch (e) {
+        console.error(`DB.delete Cloud Sync Exception (${table}):`, e);
+      }
     }
 
     return true;
