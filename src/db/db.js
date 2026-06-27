@@ -140,6 +140,28 @@ export const DB = {
     }
   },
 
+  // Push all local data to Supabase
+  async syncToCloud() {
+    if (!isSupabaseConfigured) return false;
+    try {
+      const tables = ['categories', 'raw_materials', 'products', 'clients', 'settings', 'price_history', 'deals', 'quotes'];
+      for (const table of tables) {
+        const records = this.getAll(table);
+        if (records && records.length > 0) {
+          const { error } = await supabase.from(table).upsert(records);
+          if (error) {
+            console.error(`DB.syncToCloud Error uploading ${table}:`, error);
+            return false;
+          }
+        }
+      }
+      return true;
+    } catch (e) {
+      console.error('DB.syncToCloud Exception:', e);
+      return false;
+    }
+  },
+
   // ===== SEED DATA =====
   seed() {
     // Check if old seed exists (using old category 'cat_hvac' as dynamic check)
