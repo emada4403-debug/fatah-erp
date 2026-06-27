@@ -137,7 +137,7 @@ export default function Layout({
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed top-0 bottom-0 right-0 z-50 w-64 bg-[#031f30] text-slate-300 border-l border-slate-800/80 flex flex-col justify-between transform transition-transform duration-250 lg:translate-x-0 lg:static lg:h-screen ${
+      <aside className={`no-print fixed top-0 bottom-0 right-0 z-50 w-64 bg-[#031f30] text-slate-300 border-l border-slate-800/80 flex flex-col justify-between transform transition-transform duration-250 lg:translate-x-0 lg:static lg:h-screen ${
         isSidebarOpen ? 'translate-x-0' : 'translate-x-full'
       }`}>
         <div className="flex flex-col flex-grow">
@@ -219,7 +219,7 @@ export default function Layout({
       {/* Main Content Wrap */}
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Topbar */}
-        <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-6 flex-shrink-0">
+        <header className="no-print h-16 bg-white border-b border-slate-100 flex items-center justify-between px-6 flex-shrink-0">
           {/* RTL right: Menu & Date widget & Admin status */}
           <div className="flex items-center gap-3">
             <button 

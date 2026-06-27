@@ -76,3 +76,65 @@ body {
 .rtl-grid {
   direction: rtl;
 }
+
+@media print {
+  /* Hide sidebar navigation, top header, editing form, and top controls */
+  .no-print, 
+  aside, 
+  header, 
+  [class*="no-print"],
+  .lg\:col-span-5 {
+    display: none !important;
+  }
+
+  /* Reset layout wrapper scroll and padding constraints */
+  body, 
+  html, 
+  #root, 
+  .min-h-screen, 
+  .flex-1, 
+  main, 
+  .max-w-7xl {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+    box-shadow: none !important;
+  }
+
+  /* Expand preview area to full width and print naturally */
+  .lg\:col-span-7, 
+  [class*="lg:col-span-7"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+    display: block !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  /* Target inside A4 card component to occupy full page width */
+  .lg\:col-span-7 > div {
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .print-shadow-none {
+    box-shadow: none !important;
+  }
+
+  .print-border {
+    border: none !important;
+  }
+}
