@@ -6,6 +6,7 @@ import {
 import { DB } from '../db/db.js';
 import { toast } from './Toast.jsx';
 import { confirmModal } from './ConfirmModal.jsx';
+import html2pdf from 'html2pdf.js';
 
 // ── Pre-fill constants ────────────────────────────────────────────────────────
 const DEFAULT_WK = (type) => type==='galvanized'||type==='black' ? [
@@ -22,32 +23,12 @@ const DEFAULT_TR = (type) => type==='galvanized' ? [
 
 // ── Stamp React component ────────────────────────────────────────────────────
 const Stamp = () => (
-  <div style={{width:130,height:130,flexShrink:0}}>
-    <div style={{width:'100%',height:'100%',transform:'rotate(-12deg)',opacity:0.72}}>
-      <div style={{position:'relative',width:'100%',height:'100%'}}>
-        <svg viewBox="0 0 130 130" style={{width:'100%',height:'100%',position:'absolute',inset:0}}>
-          <circle cx="65" cy="65" r="60" fill="none" stroke="#02273b" strokeWidth="3"/>
-          <circle cx="65" cy="65" r="52" fill="none" stroke="#02273b" strokeWidth="1"/>
-          <defs>
-            <path id="ta2" d="M 15,65 A 50,50 0 0,1 115,65"/>
-            <path id="ba2" d="M 20,80 A 50,50 0 0,0 110,80"/>
-          </defs>
-          <text fontSize="8.5" fontWeight="700" letterSpacing="2.5" fill="#02273b" fontFamily="IBM Plex Sans,sans-serif">
-            <textPath href="#ta2" startOffset="5%">AL-FATH ENGINEERING INDUSTRIES</textPath>
-          </text>
-          <text fontSize="7.5" fontWeight="600" letterSpacing="2" fill="#006780" fontFamily="IBM Plex Sans,sans-serif">
-            <textPath href="#ba2" startOffset="15%">EST. 1985 · EGYPT</textPath>
-          </text>
-        </svg>
-        <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3}}>
-          <div style={{fontSize:7,fontWeight:700,letterSpacing:3,color:'#02273b',textTransform:'uppercase'}}>QUOTATION</div>
-          <div style={{width:38,height:1,background:'#02273b'}}/>
-          <div style={{fontSize:15,fontWeight:900,letterSpacing:2,color:'#02273b',lineHeight:1}}>APPROVED</div>
-          <div style={{width:38,height:1,background:'#02273b'}}/>
-          <div style={{fontSize:7,fontWeight:600,letterSpacing:2,color:'#006780'}}>{new Date().getFullYear()}</div>
-        </div>
-      </div>
-    </div>
+  <div style={{width:130,height:130,flexShrink:0,position:'relative',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',border:'3px double #02273b',borderRadius:'50%',background:'rgba(255,255,255,0.95)',transform:'rotate(-12deg)',opacity:0.75,boxShadow:'0 0 8px rgba(2,39,59,0.08)',fontFamily:"'IBM Plex Sans',sans-serif"}}>
+    <div style={{fontSize:7,fontWeight:800,letterSpacing:1,color:'#02273b',textTransform:'uppercase',textAlign:'center'}}>AL-FATH ENG.</div>
+    <div style={{width:45,height:1,background:'#02273b',margin:'3px 0'}}/>
+    <div style={{fontSize:14,fontWeight:900,letterSpacing:1.5,color:'#02273b',lineHeight:1,textAlign:'center'}}>APPROVED</div>
+    <div style={{width:45,height:1,background:'#02273b',margin:'3px 0'}}/>
+    <div style={{fontSize:7,fontWeight:700,letterSpacing:1,color:'#006780',textAlign:'center'}}>EST. 1985</div>
   </div>
 );
 
@@ -61,6 +42,86 @@ export default function Quotes({ quotes, products, settings, onUpdate, onStartCr
   const [activeTab, setActiveTab]       = useState('');
   const [viewingQuote, setViewingQuote] = useState(null);
   const [statusChangingQuote, setStatusChangingQuote] = useState(null);
+
+  const translateSubsection = (name) => {
+    if (!name) return '';
+    const trimmed = name.trim();
+    if (trimmed === 'صاج مجلفن') return 'GALVANIZED SHEET METAL DUCTS';
+    if (trimmed === 'صاج أسود') return 'BLACK SHEET METAL DUCTS';
+    if (trimmed === 'مخارج هواء / دمبر' || trimmed === 'مخارج هواء ودامبر' || trimmed === 'مخارج هواء / دمبر الحجمي') return 'AIR OUTLETS & VOLUME DAMPERS';
+    if (trimmed === 'عام') return 'GENERAL FABRICATION';
+    if (trimmed.startsWith('قسم فرعي جديد #')) {
+      return trimmed.replace('قسم فرعي جديد #', 'SUBSECTION #');
+    }
+    return trimmed.toUpperCase();
+  };
+
+  const translateUnit = (unit) => {
+    if (!unit) return 'pc';
+    const u = unit.trim().toLowerCase();
+    if (u === 'حتة' || u === 'قطعة' || u === 'pc' || u === 'pcs') return 'pc';
+    if (u === 'طن' || u === 'ton' || u === 'tons') return 'Ton';
+    if (u === 'م²' || u === 'متر مربع' || u === 'm2' || u === 'sqm') return 'sq.m';
+    if (u === 'متر' || u === 'متر طولي' || u === 'm' || u === 'meter') return 'm';
+    if (u === 'كجم' || u === 'كيلو' || u === 'kg') return 'kg';
+    return unit;
+  };
+
+  const resolveImage = (img) => {
+    if (!img) return '';
+    if (img.startsWith('http://') || img.startsWith('https://')) return img;
+    return window.location.origin + img;
+  };
+
+  const handleDownloadPDF = (q) => {
+    generatePDF(html2pdf, q);
+  };
+
+  const generatePDF = (html2pdf, q) => {
+    try {
+      const exporter = typeof html2pdf === 'function' ? html2pdf : (html2pdf && html2pdf.default) || window.html2pdf;
+      if (!exporter) {
+        toast.error('مكتبة تصدير PDF غير متوفرة.');
+        return;
+      }
+
+      const cleanedClient = (q.clientName || '').replace(/[/\\?%*:|"<>]/g, '-').trim();
+      const dateStr = q.date || new Date().toISOString().slice(0, 10);
+      const filename = `${cleanedClient || 'Quotation'}_${q.number || 'QT'}_${dateStr}.pdf`;
+
+      const element = document.getElementById('saved-quote-modal-card');
+      if (!element) {
+        toast.error('لم يتم العثور على عنصر عرض السعر للطباعة.');
+        return;
+      }
+
+      const opt = {
+        margin:       0.15,
+        filename:     filename,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { 
+          scale: 2, 
+          useCORS: true, 
+          allowTaint: true,
+          devicePixelRatio: 1, 
+          logging: false 
+        },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      exporter().set(opt).from(element.outerHTML).save()
+        .then(() => {
+          toast.success('تم تحميل ملف PDF بنجاح.');
+        })
+        .catch(err => {
+          console.error('PDF Export Error:', err);
+          toast.error('حدث خطأ أثناء حفظ الملف: ' + err.message);
+        });
+    } catch (err) {
+      console.error(err);
+      toast.error('حدث خطأ أثناء تصدير PDF: ' + err.message);
+    }
+  };
 
   // ── Helpers ─────────────────────────────────────────────────────────────────
   const cNameEn   = settings.nameEn    || 'Al-Fath Engineering Industries';
@@ -119,19 +180,51 @@ export default function Quotes({ quotes, products, settings, onUpdate, onStartCr
     const tr   = q.transformation || DEFAULT_TR(q.productType||'galvanized');
     const heroImg = products.find(p=>p.id===q.items?.[0]?.productId)?.image || q.items?.[0]?.image || '';
 
-    const itemsHTML = (q.items||[]).map((it,i)=>`
+    const isOutlets = q.productType === 'outlets' || (q.items || []).some(it => it.width !== undefined && it.width !== null);
+
+    const headerColumns = `
+      <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:left;width:55px">Item</th>
+      ${isOutlets ? `<th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:center;width:65px">Photo</th>` : ''}
+      <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:left">Description</th>
+      ${isOutlets ? `
+        <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:right;width:60px">Width</th>
+        <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:right;width:60px">Height</th>
+        <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:right;width:60px">Unit</th>
+      ` : ''}
+      <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:right;width:65px">Qty Unit</th>
+      <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:right;width:80px">Qty</th>
+      <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:right;width:105px">Rate (L.E)</th>
+      <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:right;width:115px">Total (L.E)</th>
+    `;
+
+    const itemsHTML = (q.items||[]).map((it,i)=>{
+      const itemImage = it.image || products.find(p=>p.id===it.productId)?.image || '';
+      return `
       <tr style="border-bottom:1px solid #e5e9eb">
         <td style="padding:14px 12px;color:#73787d;font-size:12px;vertical-align:top">${i+1}.${i+1}</td>
+        ${isOutlets ? `
+        <td style="padding:10px 12px;text-align:center;vertical-align:top;width:65px">
+          <div style="height:40px;width:40px;border:1px solid #e5e9eb;border-radius:6px;overflow:hidden;display:flex;align-items:center;justify-content:center;margin:0 auto;background:#f7fafc">
+            ${itemImage ? `<img src="${resolveImage(itemImage)}" style="max-height:100%;max-width:100%;object-fit:contain;mix-blend-mode:multiply"/>` : '<span style="font-size:16px">📦</span>'}
+          </div>
+        </td>
+        ` : ''}
         <td style="padding:14px 12px;vertical-align:top">
           ${it.itemTitle?`<p style="font-weight:700;color:#181c1e;font-size:14px;margin-bottom:6px;text-transform:uppercase">${it.itemTitle}</p>`:`<p style="font-weight:700;color:#181c1e;font-size:14px;margin-bottom:6px">${it.productName}</p>`}
           ${it.itemDesc?`<p style="color:#42474c;font-size:12px;margin-bottom:10px;line-height:1.7">${it.itemDesc}</p>`:''}
           ${it.techNotes?`<div style="background:#f7fafc;border:1px solid #e5e9eb;border-radius:6px;padding:12px;margin-top:6px"><p style="font-size:10px;font-weight:700;color:#02273b;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Technical Note:</p><p style="font-size:12px;color:#42474c;white-space:pre-wrap;line-height:1.9">${it.techNotes}</p></div>`:''}
         </td>
-        <td style="padding:14px 12px;text-align:right;font-size:13px;vertical-align:top;white-space:nowrap">${it.unitType||'—'}</td>
+        ${isOutlets ? `
+          <td style="padding:14px 12px;text-align:right;font-size:13px;vertical-align:top;white-space:nowrap">${it.width !== undefined && it.width !== null ? it.width : '-'}</td>
+          <td style="padding:14px 12px;text-align:right;font-size:13px;vertical-align:top;white-space:nowrap">${it.height !== undefined && it.height !== null ? it.height : '-'}</td>
+          <td style="padding:14px 12px;text-align:right;font-size:13px;vertical-align:top;white-space:nowrap">${it.unit !== undefined && it.unit !== null ? it.unit : '-'}</td>
+        ` : ''}
+        <td style="padding:14px 12px;text-align:right;font-size:13px;vertical-align:top;white-space:nowrap">${translateUnit(it.unitType)}</td>
         <td style="padding:14px 12px;text-align:right;font-size:13px;vertical-align:top;white-space:nowrap">${(it.qty||0).toLocaleString('en')}</td>
         <td style="padding:14px 12px;text-align:right;font-size:13px;vertical-align:top;white-space:nowrap">${fmtEN(it.unitPrice)}</td>
         <td style="padding:14px 12px;text-align:right;font-size:14px;font-weight:700;color:#181c1e;vertical-align:top;white-space:nowrap">${fmtEN(it.total)}</td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
 
     const accHTML = acc.length ? `
       <div style="padding:0 48px 32px">
@@ -179,17 +272,12 @@ export default function Quotes({ quotes, products, settings, onUpdate, onStartCr
       </div>
     </div>
   </div>
-  ${heroImg?`<div style="margin:28px 48px 32px;border-radius:8px;overflow:hidden;height:200px;border:1px solid #e5e9eb"><img src="${heroImg}" style="width:100%;height:100%;object-fit:cover;object-position:center"/></div>`:'<div style="height:28px"></div>'}
+  ${(!isOutlets && heroImg) ? `<div style="margin:28px 48px 32px;border-radius:8px;overflow:hidden;height:200px;border:1px solid #e5e9eb"><img src="${heroImg}" style="width:100%;height:100%;object-fit:cover;object-position:center"/></div>` : '<div style="height:28px"></div>'}
   <div style="padding:0 48px 32px">
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px"><hr style="flex:1;border:none;border-top:1px solid #e5e9eb"/><h4 style="font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#73787d;white-space:nowrap">I. Primary Fabrication Schedule</h4><hr style="flex:1;border:none;border-top:1px solid #e5e9eb"/></div>
     <table style="width:100%;border-collapse:collapse">
       <thead><tr style="background:#f7fafc;border-top:1px solid #e5e9eb;border-bottom:1px solid #e5e9eb">
-        <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:left;width:55px">Item</th>
-        <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:left">Description</th>
-        <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:right;width:65px">Unit</th>
-        <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:right;width:80px">Qty</th>
-        <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:right;width:105px">Rate (L.E)</th>
-        <th style="padding:10px 12px;font-size:9px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#73787d;text-align:right;width:115px">Total (L.E)</th>
+        ${headerColumns}
       </tr></thead>
       <tbody>${itemsHTML}</tbody>
     </table>
@@ -273,7 +361,7 @@ export default function Quotes({ quotes, products, settings, onUpdate, onStartCr
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"/>
                   <div className="absolute top-3 right-3 left-3 flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      {q.productType && <span className="text-[10px] font-bold px-2 py-1 rounded-md text-[#86d1ed]" style={{background:'rgba(2,39,59,0.8)'}}>{q.productType==='galvanized'?'💿 Galvanized':q.productType==='black'?'⬛ Black Sheet':'📦 General'}</span>}
+                      {q.productType && <span className="text-[10px] font-bold px-2 py-1 rounded-md text-[#86d1ed]" style={{background:'rgba(2,39,59,0.8)'}}>{q.productType==='galvanized'?'💿 Galvanized':q.productType==='black'?'⬛ Black Sheet':q.productType==='outlets'?'📦 Outlets':'📦 General'}</span>}
                       {q.accLocked   && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/90 text-white" title="Components Locked"><Lock className="w-2.5 h-2.5 inline"/>II</span>}
                       {q.suppLocked  && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-500/90 text-white" title="Supplements Locked"><Lock className="w-2.5 h-2.5 inline"/>III</span>}
                     </div>
@@ -311,24 +399,34 @@ export default function Quotes({ quotes, products, settings, onUpdate, onStartCr
         const wk=q.workmanship||DEFAULT_WK(q.productType||'galvanized');
         const tr_s=q.transformation||DEFAULT_TR(q.productType||'galvanized');
         const secNum = acc.length?'III':'II';
+        const isOutlets = q.productType === 'outlets' || (q.items || []).some(it => it.width !== undefined && it.width !== null);
         return (
           <div className="fixed inset-0 z-50 overflow-y-auto" style={{background:'rgba(2,39,59,0.65)',backdropFilter:'blur(4px)'}}>
             <div className="sticky top-4 z-10 flex justify-between items-center max-w-4xl mx-auto px-4 mb-4">
               <button onClick={()=>setViewingQuote(null)} className="flex items-center gap-2 bg-white/95 text-slate-700 font-semibold text-sm px-4 py-2.5 rounded-xl shadow-lg hover:bg-white"><X className="w-4 h-4"/>إغلاق</button>
               <div className="flex gap-2">
                 <button onClick={()=>{setViewingQuote(null);handleOpenEdit(q);}} className="flex items-center gap-2 bg-white/95 text-slate-700 font-semibold text-sm px-4 py-2.5 rounded-xl shadow-lg hover:bg-white"><Edit className="w-4 h-4"/>تعديل</button>
-                <button onClick={()=>handlePrint(q)} className="flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-lg" style={{background:'#02273b'}}><Printer className="w-4 h-4"/>طباعة / PDF</button>
+                <button onClick={()=>handleDownloadPDF(q)} className="flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-lg bg-amber-600 hover:bg-amber-700"><FileText className="w-4 h-4"/>تنزيل PDF</button>
+                <button onClick={()=>handlePrint(q)} className="flex items-center gap-2 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-lg" style={{background:'#02273b'}}><Printer className="w-4 h-4"/>طباعة</button>
               </div>
             </div>
             <div className="max-w-4xl mx-auto px-4 pb-8">
-              <div className="bg-white rounded-2xl overflow-hidden shadow-2xl" style={{fontFamily:"'IBM Plex Sans',sans-serif"}}>
+              <div id="saved-quote-modal-card" className="bg-white rounded-2xl overflow-hidden shadow-2xl" style={{fontFamily:"'IBM Plex Sans',sans-serif"}}>
                 <div className="h-1.5" style={{background:'linear-gradient(to right,#02273b,#006780)'}}/>
                 {/* Header */}
                 <div className="px-10 pt-10 pb-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start gap-6">
-                  <div>
-                    <div className="text-lg font-bold text-[#02273b]">{cNameEn}</div>
-                    <div className="text-xs text-slate-400 mt-1 leading-relaxed">{cAddrEn}<br/>{settings.phone&&`📞 ${settings.phone}`}{settings.email&&` | ✉ ${settings.email}`}{settings.taxNo&&<><br/>Tax Reg: {settings.taxNo}</>}</div>
-                    {q.clientName&&<div className="mt-5 pl-4 border-l-2 border-[#006780]"><div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-1">Client</div><div className="font-bold text-slate-900 text-base">{q.clientName}</div>{q.clientContact&&<div className="text-xs text-slate-500 mt-0.5">Attn: {q.clientContact}</div>}</div>}
+                  <div className="flex flex-col gap-4">
+                    <img 
+                      alt="Al-Fath Engineering Industries Logo" 
+                      className="h-20 w-auto object-contain self-start" 
+                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuArXN-t3d9q_3fbo0qB3itz0xhAYPBY-VMmZYQnQpKv9ctfxF4MBhdI9HJbPGDA56gxSMfFI_xhfWistOwx7E1G3I7gaacsaR-5pCTyxxg_WoEoxH7mJZj3KJt57qP-sKqPlP4gMBXW9YLugctm4i9A1c4G1cfXY1U9Wy3hE6AwhIDIHO8nft8srj9AlcxH3Uqx0QfciBCEQ61DMDiiXeRpv1-HD6NiMoj79IJZZCpw5bLSM9I-6wK6G10rs0M_-V8n61ykqCloVMF3"
+                      crossOrigin="anonymous"
+                    />
+                    <div>
+                      <div className="text-lg font-bold text-[#02273b]">{cNameEn}</div>
+                      <div className="text-xs text-slate-400 mt-1 leading-relaxed">{cAddrEn}<br/>{settings.phone&&`📞 ${settings.phone}`}{settings.email&&` | ✉ ${settings.email}`}{settings.taxNo&&<><br/>Tax Reg: {settings.taxNo}</>}</div>
+                      {q.clientName&&<div className="mt-5 pl-4 border-l-2 border-[#006780]"><div className="text-[9px] font-semibold uppercase tracking-widest text-slate-400 mb-1">Client</div><div className="font-bold text-slate-900 text-base">{q.clientName}</div>{q.clientContact&&<div className="text-xs text-slate-500 mt-0.5">Attn: {q.clientContact}</div>}</div>}
+                    </div>
                   </div>
                   <div className="text-right flex-shrink-0">
                     <div className="text-4xl font-bold text-[#02273b] uppercase tracking-tight">Quotation</div>
@@ -341,21 +439,84 @@ export default function Quotes({ quotes, products, settings, onUpdate, onStartCr
                     <div className="mt-3">{badge(q.status)}</div>
                   </div>
                 </div>
-                {heroImg&&<div className="mx-10 mt-6 mb-0 rounded-xl overflow-hidden h-48 border border-slate-100"><img src={heroImg} alt="" className="w-full h-full object-cover object-center"/></div>}
+                {!isOutlets && heroImg && (
+                  <div className="mx-10 mt-6 mb-2 rounded-2xl overflow-hidden h-48 border border-slate-100 shadow-sm flex-shrink-0">
+                    <img src={heroImg} alt="" className="w-full h-full object-cover object-center" />
+                  </div>
+                )}
                 {/* I Items */}
                 <div className="px-10 py-8">
                   <div className="flex items-center gap-4 mb-5"><div className="h-px bg-slate-200 flex-1"/><span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 whitespace-nowrap">I. Primary Fabrication Schedule</span><div className="h-px bg-slate-200 flex-1"/></div>
                   <div className="overflow-x-auto rounded-xl border border-slate-100">
                     <table className="w-full border-collapse text-sm">
-                      <thead><tr className="bg-slate-50 border-y border-slate-100">{['Item','Description','Unit','Qty','Rate (L.E)','Total (L.E)'].map((h,i)=><th key={h} className={`py-3 px-4 text-[9px] font-bold uppercase tracking-wider text-slate-400 ${i<2?'text-left':'text-right'} ${i===0?'w-14':i===2?'w-16':i===3?'w-20':i===4?'w-28':'w-32'}`}>{h}</th>)}</tr></thead>
-                      <tbody>{(q.items||[]).map((it,i)=><tr key={i} className="border-b border-slate-100 last:border-0">
-                        <td className="py-5 px-4 text-slate-400 text-xs align-top">{i+1}.{i+1}</td>
-                        <td className="py-5 px-4 align-top">{it.itemTitle?<p className="font-bold text-slate-900 mb-1 uppercase text-sm">{it.itemTitle}</p>:<p className="font-bold text-slate-900 mb-1">{it.productName}</p>}{it.itemDesc&&<p className="text-xs text-slate-500 mb-3 leading-relaxed">{it.itemDesc}</p>}{it.techNotes&&<div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-1"><p className="text-[9px] font-bold uppercase tracking-wider text-[#02273b] mb-2">Technical Note:</p><p className="text-xs text-slate-500 whitespace-pre-wrap leading-relaxed">{it.techNotes}</p></div>}</td>
-                        <td className="py-5 px-4 text-right text-slate-600 text-xs align-top">{it.unitType||'—'}</td>
-                        <td className="py-5 px-4 text-right font-semibold text-slate-800 text-xs align-top">{(it.qty||0).toLocaleString('en')}</td>
-                        <td className="py-5 px-4 text-right text-slate-600 text-xs align-top">{fmtEN(it.unitPrice)}</td>
-                        <td className="py-5 px-4 text-right font-bold text-slate-900 align-top">{fmtEN(it.total)}</td>
-                      </tr>)}</tbody>
+                      <thead>
+                        <tr className="bg-slate-50 border-y border-slate-100">
+                          <th className="py-3 px-4 text-[9px] font-bold uppercase tracking-wider text-slate-400 text-left w-14">Item</th>
+                          {isOutlets && <th className="py-3 px-4 text-[9px] font-bold uppercase tracking-wider text-slate-400 text-center w-28">Photo</th>}
+                          <th className="py-3 px-4 text-[9px] font-bold uppercase tracking-wider text-slate-400 text-left">Description</th>
+                          {(q.productType === 'outlets' || (q.items || []).some(it => it.width !== undefined && it.width !== null)) && (
+                            <>
+                              <th className="py-3 px-4 text-[9px] font-bold uppercase tracking-wider text-slate-400 text-right w-16">Width</th>
+                              <th className="py-3 px-4 text-[9px] font-bold uppercase tracking-wider text-slate-400 text-right w-16">Height</th>
+                              <th className="py-3 px-4 text-[9px] font-bold uppercase tracking-wider text-slate-400 text-right w-16">Unit</th>
+                            </>
+                          )}
+                          <th className="py-3 px-4 text-[9px] font-bold uppercase tracking-wider text-slate-400 text-right w-20">Qty Unit</th>
+                          <th className="py-3 px-4 text-[9px] font-bold uppercase tracking-wider text-slate-400 text-right w-20">Qty</th>
+                          <th className="py-3 px-4 text-[9px] font-bold uppercase tracking-wider text-slate-400 text-right w-28">Rate (L.E)</th>
+                          <th className="py-3 px-4 text-[9px] font-bold uppercase tracking-wider text-slate-400 text-right w-32">Total (L.E)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(q.items||[]).map((it, i) => {
+                          const itemImage = it.image || products.find(p => p.id === it.productId)?.image || '';
+                          return (
+                            <tr key={i} className="border-b border-slate-100 last:border-0">
+                              <td className="py-5 px-4 text-slate-400 text-xs align-top">{i+1}.{i+1}</td>
+                              {isOutlets && (
+                                <td className="py-4 px-2 align-top text-center w-28">
+                                  <div className="h-24 w-24 overflow-hidden rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center shadow-sm mx-auto">
+                                    {itemImage ? (
+                                      <img src={resolveImage(itemImage)} alt="" className="h-full w-full object-contain mix-blend-multiply" />
+                                    ) : (
+                                      <span className="text-3xl">📦</span>
+                                    )}
+                                  </div>
+                                </td>
+                              )}
+                              <td className="py-5 px-4 align-top">
+                                {it.itemTitle ? (
+                                  <p className="font-bold text-slate-900 mb-1 uppercase text-sm">{it.itemTitle}</p>
+                                ) : (
+                                  <p className="font-bold text-slate-900 mb-1">{it.productName}</p>
+                                )}
+                                {it.itemDesc && (
+                                  <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+                                    {it.itemDesc}
+                                  </p>
+                                )}
+                                {it.techNotes && (
+                                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mt-1">
+                                    <p className="text-[9px] font-bold uppercase tracking-wider text-[#02273b] mb-2">Technical Note:</p>
+                                    <p className="text-xs text-slate-500 whitespace-pre-wrap leading-relaxed">{it.techNotes}</p>
+                                  </div>
+                                )}
+                              </td>
+                              {(q.productType === 'outlets' || (q.items || []).some(it => it.width !== undefined && it.width !== null)) && (
+                                <>
+                                  <td className="py-5 px-4 text-right text-slate-600 text-xs align-top">{it.width !== undefined && it.width !== null ? it.width : '-'}</td>
+                                  <td className="py-5 px-4 text-right text-slate-600 text-xs align-top">{it.height !== undefined && it.height !== null ? it.height : '-'}</td>
+                                  <td className="py-5 px-4 text-right text-slate-600 text-xs align-top">{it.unit !== undefined && it.unit !== null ? it.unit : '-'}</td>
+                                </>
+                              )}
+                              <td className="py-5 px-4 text-right text-slate-600 text-xs align-top">{translateUnit(it.unitType)}</td>
+                              <td className="py-5 px-4 text-right font-semibold text-slate-800 text-xs align-top">{(it.qty||0).toLocaleString('en')}</td>
+                              <td className="py-5 px-4 text-right text-slate-600 text-xs align-top">{fmtEN(it.unitPrice)}</td>
+                              <td className="py-5 px-4 text-right font-bold text-slate-900 align-top">{fmtEN(it.total)}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
                     </table>
                   </div>
                 </div>

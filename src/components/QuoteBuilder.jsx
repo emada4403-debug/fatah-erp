@@ -6,17 +6,25 @@ import {
 } from 'lucide-react';
 import { DB } from '../db/db.js';
 import { CostEngine } from '../db/costEngine.js';
+import html2pdf from 'html2pdf.js';
 
 // Pre-fill default titles and descriptions for duct types
-const TYPE_TITLE = { galvanized: 'RECTANGULAR GALVANIZED SHEET METAL DUCTS', black: 'BLACK SHEET METAL DUCTS', general: '' };
+const TYPE_TITLE = { 
+  galvanized: 'RECTANGULAR GALVANIZED SHEET METAL DUCTS', 
+  black: 'BLACK SHEET METAL DUCTS', 
+  outlets: 'AIR OUTLETS, GRILLES & VOLUME DAMPERS',
+  general: '' 
+};
 const TYPE_DESC = { 
   galvanized: 'Supply and manufacturing only of rectangular galvanized sheet metal ducts according to the required specifications and SMACNA.', 
   black: 'Supply and manufacturing of black sheet metal ducts for industrial and kitchen ventilation systems.', 
+  outlets: 'Supply and manufacturing of air outlets, grilles, diffusers, and volume dampers according to specifications.',
   general: '' 
 };
 const TYPE_TECH = {
   galvanized: `1. For slip and drive connection the weight includes slip and drive transverse connection.\n2. For TDF flange connection the price does not include corners and G-clamps.\n3. For TDC flange connection the price does not include corners and G-clamps.\n4. Galvanized ducts gauges will be according to project specifications.\n5. Thickness: according to SMACNA.\n6. Material: Galvanized sheet metals 275 g/m².`,
   black: `1. Supply & manufacturing of black sheet metal ducts for kitchen/industrial ventilation.\n2. Welding: continuous TIG weld, oil and heat resistant.\n3. Surface treatment: heat-resistant paint coating, suitable up to 350°C.\n4. Thickness: according to SMACNA specifications.\n5. Material: Black steel sheet (St37).`,
+  outlets: `1. Frames and blades: high quality extruded aluminum profiles.\n2. Dampers: optional opposed blade dampers (OBD) in galvanized steel.\n3. Finish: electrostatic powder coating RAL 9010 (or custom colors).`,
   general: '',
 };
 
@@ -29,8 +37,102 @@ const DEFAULT_WK = (type) => type === 'galvanized' || type === 'black' ? [
 const DEFAULT_TR = (type) => type === 'galvanized' ? [
   { id: 'tr1', desc: 'Square to round up to 10"', price: '120.00' },
   { id: 'tr2', desc: 'Square to round from 12" to 20"', price: '220.00' },
-  { id: 'tr3', desc: 'Square to round from 22" to 30"', price: '470.00' },
+  { id: 'tr3', desc: 'Square to round from 22" to 30"', price: '470.05' },
 ] : [];
+
+const translateSubsection = (name) => {
+  if (!name) return '';
+  const trimmed = name.trim();
+  if (trimmed === 'صاج مجلفن') return 'GALVANIZED SHEET METAL DUCTS';
+  if (trimmed === 'صاج أسود') return 'BLACK SHEET METAL DUCTS';
+  if (trimmed === 'مخارج هواء / دمبر' || trimmed === 'مخارج هواء ودامبر' || trimmed === 'مخارج هواء / دمبر الحجمي') return 'AIR OUTLETS & VOLUME DAMPERS';
+  if (trimmed === 'عام') return 'GENERAL FABRICATION';
+  if (trimmed.startsWith('قسم فرعي جديد #')) {
+    return trimmed.replace('قسم فرعي جديد #', 'SUBSECTION #');
+  }
+  return trimmed.toUpperCase();
+};
+
+const translateUnit = (unit) => {
+  if (!unit) return 'pc';
+  const u = unit.trim().toLowerCase();
+  if (u === 'حتة' || u === 'قطعة' || u === 'pc' || u === 'pcs') return 'pc';
+  if (u === 'طن' || u === 'ton' || u === 'tons') return 'Ton';
+  if (u === 'م²' || u === 'متر مربع' || u === 'm2' || u === 'sqm') return 'sq.m';
+  if (u === 'متر' || u === 'متر طولي' || u === 'm' || u === 'meter') return 'm';
+  if (u === 'كجم' || u === 'كيلو' || u === 'kg') return 'kg';
+  return unit;
+};
+
+const calculateDamperPrice = (w, h, u, damperConfig) => {
+  const wVal = parseFloat(w) || 0;
+  const hVal = parseFloat(h) || 0;
+  if (wVal <= 0 || hVal <= 0) return 0;
+
+  const config = damperConfig || {
+    w_side: 0.95,
+    w_ring: 0.45,
+    w_blade: 0.82,
+    w_angle: 0.42,
+    p_aluminum: 120,
+    p_screws: 80,
+    p_gear: 8,
+    p_handle: 25,
+    p_fab: 0.5,
+    margin: 20
+  };
+
+  let width_cm = 0, height_cm = 0, width_m = 0, height_m = 0, width_inch = 0, height_inch = 0;
+
+  if (u === 'cm') {
+    width_cm = wVal;
+    height_cm = hVal;
+    width_m = wVal / 100;
+    height_m = hVal / 100;
+    width_inch = wVal / 2.54;
+    height_inch = hVal / 2.54;
+  } else if (u === 'mm') {
+    width_cm = wVal / 10;
+    height_cm = hVal / 10;
+    width_m = wVal / 1000;
+    height_m = hVal / 1000;
+    width_inch = (wVal / 10) / 2.54;
+    height_inch = (hVal / 10) / 2.54;
+  } else if (u === 'inch') {
+    width_cm = wVal * 2.54;
+    height_cm = hVal * 2.54;
+    width_m = (wVal * 2.54) / 100;
+    height_m = (hVal * 2.54) / 100;
+    width_inch = wVal;
+    height_inch = hVal;
+  }
+
+  const sideLength_m = (height_cm + 2) / 100;
+  const weight_sides = sideLength_m * 2 * config.w_side;
+  const weight_rings = width_m * 2 * config.w_ring;
+  const n_blades = Math.floor(height_cm / 10);
+  const weight_blades = n_blades * width_m * config.w_blade;
+  const hasAngle = height_cm > 0 && !Number.isInteger(height_cm / 2);
+  const weight_angle = hasAngle ? (2 * config.w_angle * width_m) : 0;
+
+  const n_ribs = width_cm > 70 ? Math.floor(width_cm / 70) : 0;
+  const weight_ribs = n_ribs * height_m * config.w_side;
+  const extra_gears = n_ribs * n_blades * 2;
+
+  const total_weight = weight_sides + weight_rings + weight_blades + weight_angle + weight_ribs;
+
+  const cost_aluminum = total_weight * config.p_aluminum;
+  const cost_screws = 0.045 * config.p_screws;
+  const n_gears = (n_blades * 2) + extra_gears;
+  const cost_gears = n_gears * config.p_gear;
+  const cost_handle = config.p_handle;
+  const cost_fab = width_inch * height_inch * config.p_fab;
+
+  const total_cost = cost_aluminum + cost_screws + cost_gears + cost_handle + cost_fab;
+  const sale_price = total_cost * (1 + config.margin / 100);
+
+  return sale_price;
+};
 
 const mkId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -119,23 +221,41 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
       setFormProductType(currentType);
       
       // Default with one empty item under appropriate category & subsection
-      const targetCategory = currentType === 'black' ? 'cat_black' : 'cat_galvanized';
-      const defaultProd = products.find(p => p.categoryId === targetCategory) || products[0];
-      const calc = defaultProd ? CostEngine.calculate(defaultProd) : null;
-      const subsectionLabel = currentType === 'black' ? 'صاج أسود' : currentType === 'general' ? 'عام' : 'صاج مجلفن';
+      const targetCategory = 
+        currentType === 'black' ? 'cat_black' : 
+        currentType === 'outlets' ? 'cat_outlets' : 
+        currentType === 'galvanized' ? 'cat_galvanized' : 'cat_general';
+      const defaultProd = products.find(p => p.categoryId === targetCategory || p.categoryId === 'cat_vd') || products[0];
+      
+      const isDamper = defaultProd?.categoryId === 'cat_vd';
+      const defaultW = isDamper ? 60 : undefined;
+      const defaultH = isDamper ? 50 : undefined;
+      const defaultU = isDamper ? 'cm' : undefined;
+      
+      const calc = defaultProd ? (isDamper ? { finalPrice: calculateDamperPrice(60, 50, 'cm', defaultProd.costEngine?.damperConfig) } : CostEngine.calculate(defaultProd)) : null;
+      
+      const subsectionLabel = 
+        currentType === 'black' ? 'صاج أسود' : 
+        currentType === 'outlets' ? 'مخارج هواء / دمبر' : 
+        currentType === 'general' ? 'عام' : 'صاج مجلفن';
       
       setFormItems([{
         id: mkId(),
         productId: defaultProd ? defaultProd.id : '',
         productName: defaultProd ? defaultProd.name : '',
         itemTitle: defaultProd?.docTitle || TYPE_TITLE[currentType] || (defaultProd ? defaultProd.name.toUpperCase() : ''),
-        itemDesc: defaultProd?.detailedDesc || TYPE_DESC[currentType] || (defaultProd ? defaultProd.name : ''),
+        itemDesc: isDamper 
+          ? `${defaultProd.detailedDesc || defaultProd.name} (Size: 60 × 50 cm)`
+          : (defaultProd?.detailedDesc || TYPE_DESC[currentType] || (defaultProd ? defaultProd.name : '')),
         qty: 1,
-        unitPrice: calc ? calc.finalPrice : 0,
+        unitPrice: calc ? parseFloat(calc.finalPrice.toFixed(2)) : 0,
         discountPct: 0,
         techNotes: defaultProd?.techNotes || TYPE_TECH[currentType] || '',
-        unitType: defaultProd ? defaultProd.unitType : 'Ton',
-        subsection: subsectionLabel
+        unitType: defaultProd ? defaultProd.unitType : 'pc',
+        subsection: subsectionLabel,
+        width: defaultW,
+        height: defaultH,
+        unit: defaultU
       }]);
       setFormAccessories([]);
       setFormWorkmanship(DEFAULT_WK(currentType).map(r => ({ ...r, id: mkId() })));
@@ -196,20 +316,39 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
   const handleAddItem = (subsection = 'صاج مجلفن') => {
     const pool = products.filter(p => p.active !== false);
     if (!pool.length) return;
-    const prod = pool.find(p => p.categoryId === (formProductType === 'black' ? 'cat_black' : 'cat_galvanized')) || pool[0];
-    const calc = CostEngine.calculate(prod);
+    
+    const targetCategory = 
+      formProductType === 'black' ? 'cat_black' : 
+      formProductType === 'outlets' ? 'cat_outlets' : 
+      formProductType === 'galvanized' ? 'cat_galvanized' : 'cat_general';
+    const prod = pool.find(p => p.categoryId === targetCategory || p.categoryId === 'cat_vd') || pool[0];
+    
+    const isDamper = prod.categoryId === 'cat_vd';
+    const defaultW = isDamper ? 60 : undefined;
+    const defaultH = isDamper ? 50 : undefined;
+    const defaultU = isDamper ? 'cm' : undefined;
+    
+    const calc = isDamper 
+      ? { finalPrice: calculateDamperPrice(60, 50, 'cm', prod.costEngine?.damperConfig) } 
+      : CostEngine.calculate(prod);
+      
     setFormItems([...formItems, {
       id: mkId(),
       productId: prod.id,
       productName: prod.name,
       itemTitle: prod.docTitle || TYPE_TITLE[formProductType] || prod.name.toUpperCase(),
-      itemDesc: prod.detailedDesc || TYPE_DESC[formProductType] || prod.name,
+      itemDesc: isDamper 
+        ? `${prod.detailedDesc || prod.name} (Size: 60 × 50 cm)`
+        : (prod.detailedDesc || TYPE_DESC[formProductType] || prod.name),
       qty: 1,
-      unitPrice: calc ? calc.finalPrice : 0,
+      unitPrice: calc ? parseFloat(calc.finalPrice.toFixed(2)) : 0,
       discountPct: 0,
       techNotes: prod.techNotes || TYPE_TECH[formProductType] || '',
-      unitType: prod.unitType || 'Ton',
-      subsection: subsection
+      unitType: prod.unitType || 'pc',
+      subsection: subsection,
+      width: defaultW,
+      height: defaultH,
+      unit: defaultU
     }]);
   };
 
@@ -221,23 +360,39 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
         if (field === 'productId') {
           const prod = products.find(p => p.id === val);
           if (prod) {
-            const calc = CostEngine.calculate(prod);
+            const isDamper = prod.categoryId === 'cat_vd';
+            const defaultW = isDamper ? 60 : undefined;
+            const defaultH = isDamper ? 50 : undefined;
+            const defaultU = isDamper ? 'cm' : undefined;
+            
+            const calc = isDamper 
+              ? { finalPrice: calculateDamperPrice(60, 50, 'cm', prod.costEngine?.damperConfig) } 
+              : CostEngine.calculate(prod);
+              
             return {
               ...item,
               productId: prod.id,
               productName: prod.name,
               itemTitle: prod.docTitle || TYPE_TITLE[formProductType] || prod.name.toUpperCase(),
-              itemDesc: prod.detailedDesc || TYPE_DESC[formProductType] || prod.name,
+              itemDesc: isDamper 
+                ? `${prod.detailedDesc || prod.name} (Size: 60 × 50 cm)`
+                : (prod.detailedDesc || TYPE_DESC[formProductType] || prod.name),
               techNotes: prod.techNotes || TYPE_TECH[formProductType] || '',
               unitType: prod.unitType,
-              unitPrice: calc ? calc.finalPrice : 0,
-              image: prod.image || ''
+              unitPrice: calc ? parseFloat(calc.finalPrice.toFixed(2)) : 0,
+              image: prod.image || '',
+              width: defaultW,
+              height: defaultH,
+              unit: defaultU
             };
           } else {
             return {
               ...item,
               productId: '',
-              image: ''
+              image: '',
+              width: undefined,
+              height: undefined,
+              unit: undefined
             };
           }
         }
@@ -340,6 +495,7 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
 
   // Helper to extract unique subsections
   const uniqueSubsections = Array.from(new Set(formItems.map(it => it.subsection || 'صاج مجلفن')));
+  const heroImg = products.find(p => p.id === formItems[0]?.productId)?.image || formItems[0]?.image || '';
 
   const resolveImage = (img) => {
     if (!img) return '';
@@ -354,12 +510,17 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
     return diffDays > 0 ? diffDays : 15;
   };
 
-  const bannerTitle = formProductType === 'black' ? 'Black Sheet Metal Ducts' : formProductType === 'general' ? 'General Fabrication' : 'Galvanized Sheet Metal Ducts';
+  const bannerTitle = 
+    formProductType === 'black' ? 'Black Sheet Metal Ducts' : 
+    formProductType === 'outlets' ? 'Air Outlets & Volume Dampers' : 
+    formProductType === 'general' ? 'General Fabrication' : 'Galvanized Sheet Metal Ducts';
   const bannerImage = formProductType === 'black' 
     ? '/images/black_duct.png' 
-    : formProductType === 'general' 
-      ? '/images/raw_fe.png' 
-      : 'https://lh3.googleusercontent.com/aida/AP1WRLt7XEZusx28evOEwYaWsG6FqUqNfCqROQxfSbwBcdSwEFArj3ZRq9_W8a0CQvlk_kpnTUv6tkzizqqGlSUJ0lbmI4Z47AS8HwJZq_l9tew6me4X9PtfjIHg5T5Cp2_vqycAXdQjXZRa1kqjzlM14hCM8CpurBZxYE6cKQk668JC8VMd5eqjRcTc4RIGu1RMGaWPAILlvUbV_wo-D78okXWPxmHnMYW_Je7gSMpRebvZqBUoJiZx1F3iLys';
+    : formProductType === 'outlets' 
+      ? '/images/volume_damper.png' 
+      : formProductType === 'general' 
+        ? '/images/raw_fe.png' 
+        : 'https://lh3.googleusercontent.com/aida/AP1WRLt7XEZusx28evOEwYaWsG6FqUqNfCqROQxfSbwBcdSwEFArj3ZRq9_W8a0CQvlk_kpnTUv6tkzizqqGlSUJ0lbmI4Z47AS8HwJZq_l9tew6me4X9PtfjIHg5T5Cp2_vqycAXdQjXZRa1kqjzlM14hCM8CpurBZxYE6cKQk668JC8VMd5eqjRcTc4RIGu1RMGaWPAILlvUbV_wo-D78okXWPxmHnMYW_Je7gSMpRebvZqBUoJiZx1F3iLys';
 
   // Trigger Print of the A4 layout directly from the current window (popup-blocker immune)
   const handlePrint = () => {
@@ -369,6 +530,56 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
     document.title = `${cleanedClient || 'عرض_سعر'}_${formNumber || 'QT'}_${dateStr}`;
     window.print();
     document.title = originalTitle;
+  };
+
+  const handleDownloadPDF = () => {
+    generatePDF(html2pdf);
+  };
+
+  const generatePDF = (html2pdf) => {
+    try {
+      const exporter = typeof html2pdf === 'function' ? html2pdf : (html2pdf && html2pdf.default) || window.html2pdf;
+      if (!exporter) {
+        toast.error('مكتبة تصدير PDF غير متوفرة.');
+        return;
+      }
+
+      const cleanedClient = (formClientName || '').replace(/[/\\?%*:|"<>]/g, '-').trim();
+      const dateStr = formDate || new Date().toISOString().slice(0, 10);
+      const filename = `${cleanedClient || 'Quotation'}_${formNumber || 'QT'}_${dateStr}.pdf`;
+
+      const element = previewContainerRef.current.querySelector('[dir="ltr"]');
+      if (!element) {
+        toast.error('لم يتم العثور على عنصر عرض السعر للطباعة.');
+        return;
+      }
+
+      const opt = {
+        margin:       0.15,
+        filename:     filename,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { 
+          scale: 2, 
+          useCORS: true, 
+          allowTaint: true,
+          devicePixelRatio: 1, 
+          logging: false 
+        },
+        jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+      };
+
+      exporter().set(opt).from(element.outerHTML).save()
+        .then(() => {
+          toast.success('تم تحميل ملف PDF بنجاح.');
+        })
+        .catch(err => {
+          console.error('PDF Export Error:', err);
+          toast.error('حدث خطأ أثناء حفظ الملف: ' + err.message);
+        });
+    } catch (err) {
+      console.error(err);
+      toast.error('حدث خطأ أثناء تصدير PDF: ' + err.message);
+    }
   };
 
   return (
@@ -386,7 +597,10 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
           <button type="button" onClick={() => handleSave(false)} className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-[#006780]/15" style={{background:'#006780'}}>
             <Send className="w-4 h-4"/>حفظ وإرسال عرض السعر
           </button>
-          <button type="button" onClick={handlePrint} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer" title="تحميل ملف PDF / طباعة">
+          <button type="button" onClick={handleDownloadPDF} className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-amber-600/10">
+            <FileText className="w-4 h-4"/>تنزيل PDF
+          </button>
+          <button type="button" onClick={handlePrint} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer" title="طباعة عرض السعر">
             <Printer className="w-4 h-4"/>
           </button>
         </div>
@@ -517,6 +731,13 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                                 <span className="flex-shrink-0 w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500">
                                   {idx + 1}
                                 </span>
+                                <div className="h-10 w-10 overflow-hidden rounded bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0 shadow-2xs">
+                                  {img ? (
+                                    <img src={resolveImage(img)} alt="" className="h-full w-full object-contain" style={{mixBlendMode: 'multiply'}}/>
+                                  ) : (
+                                    <span className="text-lg">📦</span>
+                                  )}
+                                </div>
                                 <div className="min-w-0">
                                   <p className="text-xs font-bold text-[#02273b] truncate uppercase">
                                     {item.productName || item.itemTitle || 'بند جديد بدون اسم'}
@@ -553,7 +774,7 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                               <div className="px-4 pb-4 pt-1 border-t border-slate-100 space-y-3 bg-slate-50/20">
                                 {img && (
                                   <div className="h-20 w-full overflow-hidden rounded bg-slate-50 flex items-center justify-center border border-slate-100 mb-2">
-                                    <img src={img} alt="" className="h-full object-contain" style={{mixBlendMode: 'multiply'}}/>
+                                    <img src={resolveImage(img)} alt="" className="h-full object-contain" style={{mixBlendMode: 'multiply'}}/>
                                   </div>
                                 )}
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -564,6 +785,116 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                                       {products.filter(p => p.active !== false).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                     </select>
                                   </div>
+
+                                  {(() => {
+                                    if (formProductType !== 'outlets') return null;
+
+                                    const prod = products.find(p => p.id === item.productId);
+                                    const isDamper = prod && prod.categoryId === 'cat_vd';
+
+                                    return (
+                                      <div className="sm:col-span-3 grid grid-cols-3 gap-2 bg-[#006780]/5 p-3 rounded-xl border border-[#006780]/15 mb-1.5">
+                                        <div className="col-span-3 text-[9px] font-bold text-[#006780] mb-0.5">
+                                          {isDamper ? 'حساب مقاسات وأبعاد وتكلفة الدمبر الحجمي:' : 'مقاسات وأبعاد مخرج الهواء / الجريلة:'}
+                                        </div>
+                                        <div>
+                                          <label className="block text-[8px] text-slate-500 font-bold mb-0.5">العرض</label>
+                                          <input 
+                                            type="number" 
+                                            value={item.width !== undefined ? item.width : 60} 
+                                            onChange={e => {
+                                              const w = parseFloat(e.target.value) || 0;
+                                              const h = item.height !== undefined ? item.height : 50;
+                                              const u = item.unit || 'cm';
+                                              
+                                              let newPrice = item.unitPrice;
+                                              if (isDamper) {
+                                                newPrice = calculateDamperPrice(w, h, u, prod.costEngine?.damperConfig);
+                                              }
+                                              
+                                              const baseTitle = prod ? (prod.detailedDesc || prod.name) : (item.productName || 'بند مخارج');
+                                              const unitSuffix = u === 'cm' ? 'سم' : u === 'mm' ? 'مم' : 'بوصة';
+                                              const desc = `${baseTitle} (مقاس: ${w} × ${h} ${unitSuffix})`;
+                                              
+                                              const updatedItems = formItems.map(it => it.id === item.id ? {
+                                                ...it,
+                                                width: w,
+                                                unitPrice: isDamper ? parseFloat(newPrice.toFixed(2)) : it.unitPrice,
+                                                itemDesc: desc
+                                              } : it);
+                                              setFormItems(updatedItems);
+                                            }} 
+                                            className="w-full px-2 py-1 rounded border border-slate-200 text-xs font-bold text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-[#006780]" 
+                                            placeholder="60"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="block text-[8px] text-slate-500 font-bold mb-0.5">الارتفاع</label>
+                                          <input 
+                                            type="number" 
+                                            value={item.height !== undefined ? item.height : 50} 
+                                            onChange={e => {
+                                              const w = item.width !== undefined ? item.width : 60;
+                                              const h = parseFloat(e.target.value) || 0;
+                                              const u = item.unit || 'cm';
+                                              
+                                              let newPrice = item.unitPrice;
+                                              if (isDamper) {
+                                                newPrice = calculateDamperPrice(w, h, u, prod.costEngine?.damperConfig);
+                                              }
+                                              
+                                              const baseTitle = prod ? (prod.detailedDesc || prod.name) : (item.productName || 'بند مخارج');
+                                              const unitSuffix = u === 'cm' ? 'سم' : u === 'mm' ? 'مم' : 'بوصة';
+                                              const desc = `${baseTitle} (مقاس: ${w} × ${h} ${unitSuffix})`;
+                                              
+                                              const updatedItems = formItems.map(it => it.id === item.id ? {
+                                                ...it,
+                                                height: h,
+                                                unitPrice: isDamper ? parseFloat(newPrice.toFixed(2)) : it.unitPrice,
+                                                itemDesc: desc
+                                              } : it);
+                                              setFormItems(updatedItems);
+                                            }} 
+                                            className="w-full px-2 py-1 rounded border border-slate-200 text-xs font-bold text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-[#006780]" 
+                                            placeholder="50"
+                                          />
+                                        </div>
+                                        <div>
+                                          <label className="block text-[8px] text-slate-500 font-bold mb-0.5">الوحدة</label>
+                                          <select 
+                                            value={item.unit || 'cm'} 
+                                            onChange={e => {
+                                              const w = item.width !== undefined ? item.width : 60;
+                                              const h = item.height !== undefined ? item.height : 50;
+                                              const u = e.target.value;
+                                              
+                                              let newPrice = item.unitPrice;
+                                              if (isDamper) {
+                                                newPrice = calculateDamperPrice(w, h, u, prod.costEngine?.damperConfig);
+                                              }
+                                              
+                                              const baseTitle = prod ? (prod.detailedDesc || prod.name) : (item.productName || 'بند مخارج');
+                                              const unitSuffix = u === 'cm' ? 'سم' : u === 'mm' ? 'مم' : 'بوصة';
+                                              const desc = `${baseTitle} (مقاس: ${w} × ${h} ${unitSuffix})`;
+                                              
+                                              const updatedItems = formItems.map(it => it.id === item.id ? {
+                                                ...it,
+                                                unit: u,
+                                                unitPrice: isDamper ? parseFloat(newPrice.toFixed(2)) : it.unitPrice,
+                                                itemDesc: desc
+                                              } : it);
+                                              setFormItems(updatedItems);
+                                            }} 
+                                            className="w-full px-1 py-1 rounded border border-slate-200 text-xs font-bold text-slate-800 bg-white focus:outline-none focus:ring-1 focus:ring-[#006780]"
+                                          >
+                                            <option value="cm">سم</option>
+                                            <option value="mm">مليمتر</option>
+                                            <option value="inch">بوصة</option>
+                                          </select>
+                                        </div>
+                                      </div>
+                                    );
+                                  })()}
                                   <div className="sm:col-span-2">
                                     <label className="block text-[9px] text-slate-400 font-bold mb-1">اسم البند / المنتج</label>
                                     <input type="text" value={item.productName || ''} onChange={e => handleItemChange(item.id, 'productName', e.target.value)} className="w-full px-2 py-1.5 rounded-lg border border-slate-200 text-xs focus:outline-none focus:ring-1 focus:ring-[#006780]" placeholder="مثال: دكت صاج مجلفن..."/>
@@ -802,6 +1133,11 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                 </div>
               </div>
 
+              {['galvanized', 'black'].includes(formProductType) && heroImg && (
+                <div className="mx-10 mt-6 mb-6 rounded-xl overflow-hidden h-48 border border-surface-container-high">
+                  <img src={heroImg} alt="" className="w-full h-full object-cover object-center" />
+                </div>
+              )}
 
               {/* I. Primary Fabrication Schedule */}
               <div ref={itemsSectionRef} className="mb-16 scroll-mt-8">
@@ -815,8 +1151,16 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                     <thead>
                       <tr className="bg-surface border-y border-surface-container-high">
                         <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase w-12">Item</th>
+                        {formProductType === 'outlets' && <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase w-28 text-center">Photo</th>}
                         <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase">Description</th>
-                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-16">Unit</th>
+                        {formProductType === 'outlets' && (
+                          <>
+                            <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-16">Width</th>
+                            <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-16">Height</th>
+                            <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-16">Unit</th>
+                          </>
+                        )}
+                        <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-16">Qty Unit</th>
                         <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-20">Qty</th>
                         <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-24">Rate (L.E)</th>
                         <th className="py-3 px-4 font-label-sm text-on-surface-variant uppercase text-right w-28">Total (L.E)</th>
@@ -828,17 +1172,29 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                         return (
                           <React.Fragment key={subSecName}>
                             <tr className="bg-surface border-b border-surface-container-high font-bold">
-                              <td colSpan={6} className="py-2.5 px-4 text-xs text-primary uppercase tracking-wider font-extrabold">{subSecName}</td>
+                              <td colSpan={formProductType === 'outlets' ? 10 : 6} className="py-2.5 px-4 text-xs text-primary uppercase tracking-wider font-extrabold">{translateSubsection(subSecName)}</td>
                             </tr>
                             {subItems.map((it, i) => {
                               const techNotesList = it.techNotes
                                 ? it.techNotes.split('\n').map(line => line.trim()).filter(line => line)
                                 : [];
+                              const itemImage = it.image || products.find(p => p.id === it.productId)?.image || '';
                               return (
                                 <tr key={it.id} className="border-b border-surface-container-high">
                                   <td className="py-6 px-4 font-body-md text-on-surface font-medium align-top">
                                     {subSecIdx + 1}.{i + 1}
                                   </td>
+                                  {formProductType === 'outlets' && (
+                                    <td className="py-4 px-2 align-top text-center w-28">
+                                      <div className="h-24 w-24 overflow-hidden rounded-xl bg-surface-container flex items-center justify-center border border-surface-container-high shadow-xs mx-auto">
+                                        {itemImage ? (
+                                          <img src={resolveImage(itemImage)} alt="" className="h-full w-full object-contain mix-blend-multiply" />
+                                        ) : (
+                                          <span className="text-3xl">📦</span>
+                                        )}
+                                      </div>
+                                    </td>
+                                  )}
                                   <td className="py-6 px-4 align-top">
                                     <p className="font-body-md text-on-surface font-bold mb-2 uppercase">
                                       {it.itemTitle || it.productName}
@@ -870,8 +1226,21 @@ export default function QuoteBuilder({ quotes, clients, products, settings, onUp
                                       </div>
                                     )}
                                   </td>
+                                  {formProductType === 'outlets' && (
+                                    <>
+                                      <td className="py-6 px-4 font-body-md text-on-surface text-right align-top">
+                                        {it.width !== undefined && it.width !== null ? it.width : '-'}
+                                      </td>
+                                      <td className="py-6 px-4 font-body-md text-on-surface text-right align-top">
+                                        {it.height !== undefined && it.height !== null ? it.height : '-'}
+                                      </td>
+                                      <td className="py-6 px-4 font-body-md text-on-surface text-right align-top">
+                                        {it.unit !== undefined && it.unit !== null ? it.unit : '-'}
+                                      </td>
+                                    </>
+                                  )}
                                   <td className="py-6 px-4 font-body-md text-on-surface text-right align-top">
-                                    {it.unitType || 'Ton'}
+                                    {translateUnit(it.unitType)}
                                   </td>
                                   <td className="py-6 px-4 font-body-md text-on-surface text-right align-top">
                                     {(it.qty || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

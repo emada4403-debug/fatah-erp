@@ -10,6 +10,7 @@ import QuoteBuilder from './components/QuoteBuilder.jsx';
 import CRM from './components/CRM.jsx';
 import Reports from './components/Reports.jsx';
 import Settings from './components/Settings.jsx';
+import VolumeDamperCalc from './components/VolumeDamper/VolumeDamperCalc.jsx';
 import { Lock, X, ShieldAlert } from 'lucide-react';
 import { ToastContainer, toast } from './components/Toast.jsx';
 import { ConfirmModalContainer } from './components/ConfirmModal.jsx';
@@ -304,6 +305,7 @@ export default function App() {
         );
       case 'quote_builder_galvanized':
       case 'quote_builder_black':
+      case 'quote_builder_outlets':
       case 'quote_builder_general': {
         const type = activeTab.replace('quote_builder_', '');
         return (
@@ -354,6 +356,10 @@ export default function App() {
             settings={settings}
             onUpdate={syncData}
           />
+        );
+      case 'volume_damper':
+        return (
+          <VolumeDamperCalc />
         );
       default:
         return <div className="text-center py-10">الصفحة المطلوبة غير موجودة</div>;

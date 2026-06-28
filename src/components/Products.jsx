@@ -61,6 +61,17 @@ export default function Products({ products, materials, categories, isAdmin, onU
   const [formPurchasePrice, setFormPurchasePrice] = useState('');
   const [formScrapSellingPrice, setFormScrapSellingPrice] = useState('');
 
+  // Damper config states
+  const [formVdWside, setFormVdWside] = useState(0.95);
+  const [formVdWring, setFormVdWring] = useState(0.45);
+  const [formVdWblade, setFormVdWblade] = useState(0.82);
+  const [formVdWangle, setFormVdWangle] = useState(0.42);
+  const [formVdPaluminum, setFormVdPaluminum] = useState(120);
+  const [formVdPscrews, setFormVdPscrews] = useState(80);
+  const [formVdPgear, setFormVdPgear] = useState(8);
+  const [formVdPhandle, setFormVdPhandle] = useState(25);
+  const [formVdPfab, setFormVdPfab] = useState(0.5);
+
   // Reset form helper
   const resetForm = () => {
     setFormName('');
@@ -103,6 +114,16 @@ export default function Products({ products, materials, categories, isAdmin, onU
     setFormDocTitle('');
     setFormDetailedDesc('');
     setFormTechNotes('');
+
+    setFormVdWside(0.95);
+    setFormVdWring(0.45);
+    setFormVdWblade(0.82);
+    setFormVdWangle(0.42);
+    setFormVdPaluminum(120);
+    setFormVdPscrews(80);
+    setFormVdPgear(8);
+    setFormVdPhandle(25);
+    setFormVdPfab(0.5);
   };
 
   // Open Add Form
@@ -166,6 +187,17 @@ export default function Products({ products, materials, categories, isAdmin, onU
     setFormScrapPct(scrap.scrapPct !== undefined ? scrap.scrapPct : '');
     setFormPurchasePrice(scrap.purchasePrice !== undefined ? scrap.purchasePrice : '');
     setFormScrapSellingPrice(scrap.scrapSellingPrice !== undefined ? scrap.scrapSellingPrice : '');
+
+    const damper = ce.damperConfig || {};
+    setFormVdWside(damper.w_side !== undefined ? damper.w_side : 0.95);
+    setFormVdWring(damper.w_ring !== undefined ? damper.w_ring : 0.45);
+    setFormVdWblade(damper.w_blade !== undefined ? damper.w_blade : 0.82);
+    setFormVdWangle(damper.w_angle !== undefined ? damper.w_angle : 0.42);
+    setFormVdPaluminum(damper.p_aluminum !== undefined ? damper.p_aluminum : 120);
+    setFormVdPscrews(damper.p_screws !== undefined ? damper.p_screws : 80);
+    setFormVdPgear(damper.p_gear !== undefined ? damper.p_gear : 8);
+    setFormVdPhandle(damper.p_handle !== undefined ? damper.p_handle : 25);
+    setFormVdPfab(damper.p_fab !== undefined ? damper.p_fab : 0.5);
   };
 
   // Handle Add Material Row
@@ -242,7 +274,21 @@ export default function Products({ products, materials, categories, isAdmin, onU
       docTitle: formDocTitle.trim(),
       detailedDesc: formDetailedDesc.trim(),
       techNotes: formTechNotes.trim(),
-      costEngine: {
+      categoryId: formCategory,
+      costEngine: formCategory === 'cat_vd' ? {
+        damperConfig: {
+          w_side: parseFloat(formVdWside) || 0,
+          w_ring: parseFloat(formVdWring) || 0,
+          w_blade: parseFloat(formVdWblade) || 0,
+          w_angle: parseFloat(formVdWangle) || 0,
+          p_aluminum: parseFloat(formVdPaluminum) || 0,
+          p_screws: parseFloat(formVdPscrews) || 0,
+          p_gear: parseFloat(formVdPgear) || 0,
+          p_handle: parseFloat(formVdPhandle) || 0,
+          p_fab: parseFloat(formVdPfab) || 0,
+          margin: parseFloat(formMargin) || 0
+        }
+      } : {
         rawMaterials: formMaterials.filter(m => m.materialId),
         scrapConfig: {
           useScrap: formUseScrap,
@@ -325,7 +371,20 @@ export default function Products({ products, materials, categories, isAdmin, onU
       docTitle: formDocTitle.trim(),
       detailedDesc: formDetailedDesc.trim(),
       techNotes: formTechNotes.trim(),
-      costEngine: {
+      costEngine: formCategory === 'cat_vd' ? {
+        damperConfig: {
+          w_side: parseFloat(formVdWside) || 0,
+          w_ring: parseFloat(formVdWring) || 0,
+          w_blade: parseFloat(formVdWblade) || 0,
+          w_angle: parseFloat(formVdWangle) || 0,
+          p_aluminum: parseFloat(formVdPaluminum) || 0,
+          p_screws: parseFloat(formVdPscrews) || 0,
+          p_gear: parseFloat(formVdPgear) || 0,
+          p_handle: parseFloat(formVdPhandle) || 0,
+          p_fab: parseFloat(formVdPfab) || 0,
+          margin: parseFloat(formMargin) || 0
+        }
+      } : {
         rawMaterials: formMaterials.filter(m => m.materialId && parseFloat(m.qty) > 0),
         scrapConfig: {
           useScrap: formUseScrap,
@@ -1028,6 +1087,118 @@ export default function Products({ products, materials, categories, isAdmin, onU
                       </div>
                     </div>
                   </div>
+                ) : costBreakdownProduct.categoryId === 'cat_vd' ? (
+                  // Volume Damper custom breakdown
+                  <div className="space-y-6 text-right">
+                    <div className="bg-slate-955/40 p-5 rounded-2xl border border-slate-850 space-y-4">
+                      <h4 className="text-xs font-black text-indigo-400 border-b border-slate-850 pb-2">تفصيل المقاس الافتراضي للكتالوج (60 × 50 سم)</h4>
+                      
+                      {(() => {
+                        const config = costBreakdownProduct.costEngine?.damperConfig || {
+                          w_side: 0.95,
+                          w_ring: 0.45,
+                          w_blade: 0.82,
+                          w_angle: 0.42,
+                          p_aluminum: 120,
+                          p_screws: 80,
+                          p_gear: 8,
+                          p_handle: 25,
+                          p_fab: 0.5,
+                          margin: 20
+                        };
+                        
+                        const wVal = 60;
+                        const hVal = 50;
+                        const width_cm = wVal;
+                        const height_cm = hVal;
+                        const width_m = wVal / 100;
+                        const height_m = hVal / 100;
+                        const width_inch = wVal / 2.54;
+                        const height_inch = hVal / 2.54;
+
+                        const sideLength_m = (height_cm + 2) / 100;
+                        const weight_sides = sideLength_m * 2 * config.w_side;
+                        const weight_rings = width_m * 2 * config.w_ring;
+                        const n_blades = Math.floor(height_cm / 10);
+                        const weight_blades = n_blades * width_m * config.w_blade;
+                        const hasAngle = height_cm > 0 && !Number.isInteger(height_cm / 2);
+                        const weight_angle = hasAngle ? (2 * config.w_angle * width_m) : 0;
+
+                        const n_ribs = width_cm > 70 ? Math.floor(width_cm / 70) : 0;
+                        const weight_ribs = n_ribs * height_m * config.w_side;
+                        const extra_gears = n_ribs * n_blades * 2;
+
+                        const total_weight = weight_sides + weight_rings + weight_blades + weight_angle + weight_ribs;
+
+                        const cost_aluminum = total_weight * config.p_aluminum;
+                        const cost_screws = 0.045 * config.p_screws;
+                        const n_gears = (n_blades * 2) + extra_gears;
+                        const cost_gears = n_gears * config.p_gear;
+                        const cost_handle = config.p_handle;
+                        const cost_fab = width_inch * height_inch * config.p_fab;
+
+                        return (
+                          <div className="space-y-4 text-xs">
+                            <div className="grid grid-cols-3 gap-3 bg-slate-950/50 p-3.5 rounded-xl border border-slate-800 text-center font-bold text-slate-350">
+                              <div>الوزن الإجمالي: <span className="text-white block font-mono text-xs mt-0.5">{total_weight.toFixed(3)} كجم</span></div>
+                              <div>عدد الريش: <span className="text-white block font-mono text-xs mt-0.5">{n_blades} قطعة</span></div>
+                              <div>التروس الإجمالية: <span className="text-white block font-mono text-xs mt-0.5">{n_gears} قطعة</span></div>
+                            </div>
+                            
+                            <div className="bg-slate-950/20 border border-slate-850 rounded-xl overflow-hidden shadow-inner">
+                              <table className="w-full text-right border-collapse text-[11px]">
+                                <thead>
+                                  <tr className="bg-slate-955 border-b border-slate-850 text-slate-400 font-bold">
+                                    <th className="p-3">عنصر التكلفة</th>
+                                    <th className="p-3 text-left">التكلفة (جنيه)</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-850/40 text-slate-300">
+                                  <tr>
+                                    <td className="p-3">هيكل وقطاعات الألومنيوم ({total_weight.toFixed(3)} كجم × {config.p_aluminum} ج)</td>
+                                    <td className="p-3 text-left font-mono">{formatCurrency(cost_aluminum)}</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="p-3">مسامير التجميع (ثابت 0.045 كجم × {config.p_screws} ج)</td>
+                                    <td className="p-3 text-left font-mono">{formatCurrency(cost_screws)}</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="p-3">تروس التحكم البلاستيكية ({n_gears} ترس × {config.p_gear} ج)</td>
+                                    <td className="p-3 text-left font-mono">{formatCurrency(cost_gears)}</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="p-3">طقم اليد وتشغيل الدامبر (طقم كامل)</td>
+                                    <td className="p-3 text-left font-mono">{formatCurrency(cost_handle)}</td>
+                                  </tr>
+                                  <tr>
+                                    <td className="p-3">مصنعية وتجميع الهيكل ({(width_inch * height_inch).toFixed(2)} بوصة² × {config.p_fab} ج)</td>
+                                    <td className="p-3 text-left font-mono">{formatCurrency(cost_fab)}</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Total Box */}
+                    <div className="border border-slate-850 rounded-2xl p-5 space-y-2 bg-gradient-to-br from-slate-950 to-slate-900 text-white text-right font-semibold shadow-lg">
+                      <div className="flex justify-between text-xs text-slate-400">
+                        <span>إجمالي تكلفة الإنتاج</span>
+                        <span className="font-mono">{formatCurrency(calc?.totalCost)}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-slate-400">
+                        <span>هامش الربح ({calc?.margin.toFixed(1)}%)</span>
+                        <span className="font-mono">{formatCurrency(calc ? (calc.finalPrice - calc.totalCost) : 0)}</span>
+                      </div>
+                      <div className="h-px bg-slate-800 my-1.5"></div>
+                      <div className="flex justify-between font-bold text-lg text-emerald-400">
+                        <span>سعر البيع النهائي للكتالوج (60x50سم)</span>
+                        <span className="font-mono text-xl">{formatCurrency(calc?.finalPrice)}</span>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   // Original basic breakdown view for other categories
                   <div className="space-y-6">
@@ -1160,7 +1331,7 @@ export default function Products({ products, materials, categories, isAdmin, onU
               {/* Right Side: Tabbed Inputs Form (2 Columns) */}
               <div className="lg:col-span-2 flex flex-col space-y-4">
                 {/* Form Tabs */}
-                <div className="bg-slate-950/40 p-1.5 rounded-2xl flex gap-1 border border-slate-800">
+                <div className="bg-slate-955/40 p-1.5 rounded-2xl flex gap-1 border border-slate-800">
                   <button
                     type="button"
                     onClick={() => setActiveFormTab('info')}
@@ -1172,28 +1343,44 @@ export default function Products({ products, materials, categories, isAdmin, onU
                   >
                     📝 بيانات المنتج الأساسية
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveFormTab('materials')}
-                    className={`flex-1 py-2.5 text-xs font-black rounded-xl transition-all ${
-                      activeFormTab === 'materials'
-                        ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-500/15'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20'
-                    }`}
-                  >
-                    🧱 المكونات والخامات ({formMaterials.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveFormTab('operations')}
-                    className={`flex-1 py-2.5 text-xs font-black rounded-xl transition-all ${
-                      activeFormTab === 'operations'
-                        ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-500/15'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20'
-                    }`}
-                  >
-                    👷 العمالة والتشغيل
-                  </button>
+                  {formCategory === 'cat_vd' ? (
+                    <button
+                      type="button"
+                      onClick={() => setActiveFormTab('damper_config')}
+                      className={`flex-1 py-2.5 text-xs font-black rounded-xl transition-all ${
+                        activeFormTab === 'damper_config'
+                          ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg shadow-[#006780]/15'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20'
+                      }`}
+                    >
+                      ⚙️ معطيات وتكاليف الدمبر
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setActiveFormTab('materials')}
+                        className={`flex-1 py-2.5 text-xs font-black rounded-xl transition-all ${
+                          activeFormTab === 'materials'
+                            ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-500/15'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20'
+                        }`}
+                      >
+                        🧱 المكونات والخامات ({formMaterials.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveFormTab('operations')}
+                        className={`flex-1 py-2.5 text-xs font-black rounded-xl transition-all ${
+                          activeFormTab === 'operations'
+                            ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-500/15'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/20'
+                        }`}
+                      >
+                        👷 العمالة والتشغيل
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 {/* Tab Content Box */}
@@ -1225,7 +1412,15 @@ export default function Products({ products, materials, categories, isAdmin, onU
                           <label className="block text-xs font-semibold text-slate-400 mb-1.5">التصنيف</label>
                           <select
                             value={formCategory}
-                            onChange={(e) => setFormCategory(e.target.value)}
+                            onChange={(e) => {
+                              const cat = e.target.value;
+                              setFormCategory(cat);
+                              if (cat === 'cat_vd') {
+                                setActiveFormTab('damper_config');
+                              } else if (activeFormTab === 'damper_config') {
+                                setActiveFormTab('info');
+                              }
+                            }}
                             className="w-full px-4 py-3 rounded-xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-950 text-white focus:border-indigo-500 transition-all appearance-none cursor-pointer"
                             style={{ backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'left 0.75rem center', backgroundSize: '1.25rem', backgroundRepeat: 'no-repeat', paddingLeft: '2.5rem' }}
                           >
@@ -1481,6 +1676,121 @@ export default function Products({ products, materials, categories, isAdmin, onU
                             <span className="text-[10px] text-slate-500 block">سوف يظهر للمندوبين عند إنشاء عروض أسعار جديدة</span>
                           </div>
                         </label>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeFormTab === 'damper_config' && formCategory === 'cat_vd' && (
+                    <div className="space-y-5 animate-in fade-in duration-150 text-right">
+                      <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800 space-y-4">
+                        <h4 className="text-xs font-black text-indigo-400 border-b border-slate-800 pb-2">أوزان قطاعات الألومنيوم للدمبر (كجم / متر)</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-400 mb-1.5">وزن الجنب (w_side)</label>
+                            <input
+                              type="number"
+                              value={formVdWside}
+                              onChange={(e) => setFormVdWside(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                              className="w-full px-4 py-2.5 rounded-xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-950 text-white font-mono text-left"
+                              step="0.001"
+                              min="0"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-400 mb-1.5">وزن الحلق (w_ring)</label>
+                            <input
+                              type="number"
+                              value={formVdWring}
+                              onChange={(e) => setFormVdWring(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                              className="w-full px-4 py-2.5 rounded-xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-950 text-white font-mono text-left"
+                              step="0.001"
+                              min="0"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-400 mb-1.5">وزن الريشة (w_blade)</label>
+                            <input
+                              type="number"
+                              value={formVdWblade}
+                              onChange={(e) => setFormVdWblade(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                              className="w-full px-4 py-2.5 rounded-xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-950 text-white font-mono text-left"
+                              step="0.001"
+                              min="0"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-400 mb-1.5">وزن الزاوية (w_angle)</label>
+                            <input
+                              type="number"
+                              value={formVdWangle}
+                              onChange={(e) => setFormVdWangle(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                              className="w-full px-4 py-2.5 rounded-xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-950 text-white font-mono text-left"
+                              step="0.001"
+                              min="0"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-slate-950/40 p-4 rounded-2xl border border-slate-800 space-y-4">
+                        <h4 className="text-xs font-black text-emerald-400 border-b border-slate-800 pb-2">أسعار الخامات والمصنعيات للدمبر</h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-400 mb-1.5">سعر الألومنيوم / كجم</label>
+                            <input
+                              type="number"
+                              value={formVdPaluminum}
+                              onChange={(e) => setFormVdPaluminum(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                              className="w-full px-4 py-2.5 rounded-xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-950 text-white font-mono text-left"
+                              step="0.01"
+                              min="0"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-400 mb-1.5">سعر المسامير / كجم</label>
+                            <input
+                              type="number"
+                              value={formVdPscrews}
+                              onChange={(e) => setFormVdPscrews(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                              className="w-full px-4 py-2.5 rounded-xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-950 text-white font-mono text-left"
+                              step="0.01"
+                              min="0"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-400 mb-1.5">سعر الترس / قطعة</label>
+                            <input
+                              type="number"
+                              value={formVdPgear}
+                              onChange={(e) => setFormVdPgear(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                              className="w-full px-4 py-2.5 rounded-xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-950 text-white font-mono text-left"
+                              step="0.01"
+                              min="0"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-400 mb-1.5">سعر طقم اليد / قطعة</label>
+                            <input
+                              type="number"
+                              value={formVdPhandle}
+                              onChange={(e) => setFormVdPhandle(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                              className="w-full px-4 py-2.5 rounded-xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-950 text-white font-mono text-left"
+                              step="0.01"
+                              min="0"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-400 mb-1.5">المصنعية / بوصة مربعة</label>
+                            <input
+                              type="number"
+                              value={formVdPfab}
+                              onChange={(e) => setFormVdPfab(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                              className="w-full px-4 py-2.5 rounded-xl border border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-[#006780] bg-slate-950 text-white font-mono text-left"
+                              step="0.001"
+                              min="0"
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}

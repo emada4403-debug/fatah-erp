@@ -14,7 +14,8 @@ import {
   HelpCircle,
   LogOut,
   ChevronDown,
-  Layers
+  Layers,
+  Calculator
 } from 'lucide-react';
 
 
@@ -92,6 +93,7 @@ export default function Layout({
     { id: 'dashboard', label: 'لوحة التحكم', icon: LayoutDashboard },
     { id: 'products', label: 'إدارة المنتجات', icon: Package },
     { id: 'pricing', label: 'التسعير الديناميكي', icon: TrendingUp },
+    { id: 'volume_damper', label: 'حاسبة دمبر حجمي', icon: Calculator },
     { 
       id: 'quote_builder', 
       label: 'إنشاء عرض سعر', 
@@ -99,6 +101,7 @@ export default function Layout({
       subItems: [
         { id: 'quote_builder_galvanized', label: 'صاج مجلفن' },
         { id: 'quote_builder_black', label: 'صاج أسود' },
+        { id: 'quote_builder_outlets', label: 'مخارج هواء ودامبر' },
         { id: 'quote_builder_general', label: 'عام / أخرى' }
       ]
     },

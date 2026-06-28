@@ -206,8 +206,10 @@ export const DB = {
     const lacksMatImages = this.getAll('raw_materials').some(m => m.id === 'mat_galv' && !m.image);
     // Check if new seed for accessories is missing
     const lacksAccessories = !this.getAll('products').some(p => p.id === 'prod_tdf_corner');
+    // Check if volume damper lacks damperConfig
+    const lacksDamperConfig = !this.getAll('products').some(p => p.id === 'prod_003' && p.costEngine?.damperConfig);
     
-    if (hasOldSeed || lacksImages || lacksMatImages || lacksAccessories) {
+    if (hasOldSeed || lacksImages || lacksMatImages || lacksAccessories || lacksDamperConfig) {
       // Clear localStorage tables related to seed data to trigger re-seed
       const tablesToClear = ['raw_materials', 'categories', 'products', 'quotes', 'clients', 'settings', 'price_history', 'deals'];
       tablesToClear.forEach(t => localStorage.removeItem(this._key(t)));
@@ -288,25 +290,27 @@ export const DB = {
       },
       {
         id: 'prod_003',
-        name: 'فوليوم دامبر يدوي 30×30',
-        code: 'VD-3030',
+        name: 'فوليوم دامبر يدوي',
+        code: 'VD-AL',
         categoryId: 'cat_vd',
         unitType: 'حتة',
         image: '/images/volume_damper.png',
         minMarginPct: 15,
         costEngine: {
-          rawMaterials: [
-            { materialId: 'mat_galv', qty: 3.5, note: 'صاج مجلفن شفرات' },
-            { materialId: 'mat_al', qty: 0.5, note: 'إطار ألومنيوم' }
-          ],
-          laborCost: 60,
-          overhead: { fixed: 25, variable: 15 },
-          operations: [
-            { name: 'تجميع شفرات الدامبر', cost: 35 },
-            { name: 'تركيب يد التحكم والتروس', cost: 15 },
-          ],
+          damperConfig: {
+            w_side: 0.95,
+            w_ring: 0.45,
+            w_blade: 0.82,
+            w_angle: 0.42,
+            p_aluminum: 120,
+            p_screws: 80,
+            p_gear: 8,
+            p_handle: 25,
+            p_fab: 0.5,
+            margin: 20
+          }
         },
-        marginPct: 25,
+        marginPct: 20,
         active: true,
       },
       {

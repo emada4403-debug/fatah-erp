@@ -78,6 +78,11 @@ body {
 }
 
 @media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   /* Hide sidebar navigation, top header, editing form, and top controls */
   .no-print, 
   aside, 
